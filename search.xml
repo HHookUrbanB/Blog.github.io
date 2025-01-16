@@ -1,36 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>实习日记（2）</title>
-    <url>/2025/01/15/Internship%20Blog(2)/</url>
-    <content><![CDATA[<h1 id="实习日记-2"><a href="#实习日记-2" class="headerlink" title="实习日记 2"></a>实习日记 2</h1><p>​	今天是搭建个人博客的第三天，从最开始的部署到GitHub都有困难到现在已经能在网站实现评论，我感觉已经取得了很大的进步，但每天依然是到网上各处搜罗功能、美化，我又开始思考我最初搭建个人博客的目的，无非是想整理一下自己大学以来的课程学习、好物分享以及碰到一些问题的解决方法。</p>
-<p>​	因此，我觉得暂时不去投入大量精力优化博客的功能和主题，先慢慢写一些实际的东西再进一步改进就好。</p>
-]]></content>
-      <categories>
-        <category>Diary</category>
-      </categories>
-      <tags>
-        <tag>实习</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>实习日记（1）</title>
-    <url>/2025/01/14/Internship%20Blog(1)/</url>
-    <content><![CDATA[<h1 id="今日任务"><a href="#今日任务" class="headerlink" title="今日任务"></a>今日任务</h1><pre><code>1. 更换会议室HDMI线；
-2. 安装visio软件；
-3. 备份邮件
-</code></pre>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span>&#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;hello world&quot;</span>);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>Diary</category>
-      </categories>
-      <tags>
-        <tag>实习</tag>
-      </tags>
-  </entry>
-  <entry>
     <title>My Courses</title>
     <url>/2025/01/15/Courses/</url>
     <content><![CDATA[<h1 id="北航本科课程汇总"><a href="#北航本科课程汇总" class="headerlink" title="北航本科课程汇总"></a>北航本科课程汇总</h1><p>[TOC]</p>
@@ -470,6 +440,36 @@
       <tags>
         <tag>BUAA</tag>
         <tag>Course</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>实习日记（2）</title>
+    <url>/2025/01/15/Internship%20Blog(2)/</url>
+    <content><![CDATA[<h1 id="实习日记-2"><a href="#实习日记-2" class="headerlink" title="实习日记 2"></a>实习日记 2</h1><p>​	今天是搭建个人博客的第三天，从最开始的部署到GitHub都有困难到现在已经能在网站实现评论，我感觉已经取得了很大的进步，但每天依然是到网上各处搜罗功能、美化，我又开始思考我最初搭建个人博客的目的，无非是想整理一下自己大学以来的课程学习、好物分享以及碰到一些问题的解决方法。</p>
+<p>​	因此，我觉得暂时不去投入大量精力优化博客的功能和主题，先慢慢写一些实际的东西再进一步改进就好。</p>
+]]></content>
+      <categories>
+        <category>Diary</category>
+      </categories>
+      <tags>
+        <tag>实习</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>实习日记（1）</title>
+    <url>/2025/01/14/Internship%20Blog(1)/</url>
+    <content><![CDATA[<h1 id="今日任务"><a href="#今日任务" class="headerlink" title="今日任务"></a>今日任务</h1><pre><code>1. 更换会议室HDMI线；
+2. 安装visio软件；
+3. 备份邮件
+</code></pre>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">()</span>&#123;</span><br><span class="line">	<span class="built_in">printf</span>(<span class="string">&quot;hello world&quot;</span>);</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>Diary</category>
+      </categories>
+      <tags>
+        <tag>实习</tag>
       </tags>
   </entry>
 </search>
