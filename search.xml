@@ -683,4 +683,37 @@
         <tag>雅思</tag>
       </tags>
   </entry>
+  <entry>
+    <title>3月博客-1</title>
+    <url>/2025/03/06/Blog(1)/</url>
+    <content><![CDATA[<blockquote>
+<p>自上次更新博客已是一月有余，年后本地部署deepseek写了几句指南，竟成了烂尾博客，虽然是忙，但说到底还是不肯挤出时间干这个营生。今天查阅资料猛然想起自己还有个博客闲置许久，干脆动动手，记录一下这个月以来的心得。</p>
+</blockquote>
+<p>上周末，我的实习工作正式结束，回归了阔别已久的校园，这一个半月的实习日子过得蛮充实的，尤其是随着技能的熟练，收到委派的任务愈来愈多，也总是能遇到一些问题，一开始我总担心自己探索解决的方法会搞砸，畏畏缩缩不敢尝试，得到同事的认同才沿着他们的方法解决，但慢慢我越来越依靠自己的能力，即使有没遇见过的情况也会首先自我排查和探索，我认为这样的成就感要比按部就班的工作更强一点。</p>
+<p>这学期的校园生活也已经步入正轨，稀疏的课程之外我一方面要备考雅思，另一方面跟随陈佳老师在做身份认证的工作，相较于上课下课的学习生活显得更丰富了一些，学习的资料刚看了1&#x2F;4，总想把进度搞快一点，但也不能马马虎虎水过地皮湿。</p>
+<p>嗯对了，上周发现了Notion这款软件，被宣传的效果狠狠安利了，但直到现在我仍然没落实去写第一篇笔记，我就是这么的眼比手长。</p>
+<p>这个学期也就只有靠清明和五一假期给我期待来续命了，继续看书吧，下次再说。</p>
+]]></content>
+      <categories>
+        <category>Daily</category>
+      </categories>
+      <tags>
+        <tag>BUAA</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>DeepSeek本地部署</title>
+    <url>/2025/02/05/DeepSeek%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2/</url>
+    <content><![CDATA[<h1 id="DeepSeek本地部署指南（MAC版）"><a href="#DeepSeek本地部署指南（MAC版）" class="headerlink" title="DeepSeek本地部署指南（MAC版）"></a>DeepSeek本地部署指南（MAC版）</h1><h2 id="Step-1"><a href="#Step-1" class="headerlink" title="Step 1"></a>Step 1</h2><p>访问<a href="https://ollama.com/">Ollama官网</a>，下载适用于macOS的工具</p>
+<h2 id="Step-2"><a href="#Step-2" class="headerlink" title="Step 2"></a>Step 2</h2><p>保持Ollama工具的开启，在<a href="https://ollama.com/">Ollama官网</a>的[Models]里找到deepseek-r1的大模型，选择合适的版本</p>
+<h2 id="Step-3"><a href="#Step-3" class="headerlink" title="Step 3"></a>Step 3</h2><p>在Mac终端输入命令下载并运行</p>
+]]></content>
+      <categories>
+        <category>Technology</category>
+      </categories>
+      <tags>
+        <tag>MAC</tag>
+        <tag>AI</tag>
+      </tags>
+  </entry>
 </search>
