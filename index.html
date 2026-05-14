@@ -1,345 +1,239 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Henry's Blog - HHookUrbanB</title><meta name="author" content="Henry Hu"><meta name="copyright" content="Henry Hu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="ffffff"><meta name="description" content="莫道桑榆晚，为霞尚满天">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Henry&#39;s Blog">
-<meta property="og:url" content="https://hhookurbanb.com/index.html">
-<meta property="og:site_name" content="Henry&#39;s Blog">
-<meta property="og:description" content="莫道桑榆晚，为霞尚满天">
-<meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://hhookurbanb.com/img/3066.jpg">
-<meta property="article:author" content="Henry Hu">
-<meta property="article:tag" content="Cybersecurity, Crypto, Python">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://hhookurbanb.com/img/3066.jpg"><link rel="shortcut icon" href="/img/logo_red.jpg"><link rel="canonical" href="https://hhookurbanb.com/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
-    (() => {
-      
-    const saveToLocal = {
-      set: (key, value, ttl) => {
-        if (!ttl) return
-        const expiry = Date.now() + ttl * 86400000
-        localStorage.setItem(key, JSON.stringify({ value, expiry }))
-      },
-      get: key => {
-        const itemStr = localStorage.getItem(key)
-        if (!itemStr) return undefined
-        const { value, expiry } = JSON.parse(itemStr)
-        if (Date.now() > expiry) {
-          localStorage.removeItem(key)
-          return undefined
-        }
-        return value
-      }
-    }
-
-    window.btf = {
-      saveToLocal,
-      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
-        const script = document.createElement('script')
-        script.src = url
-        script.async = true
-        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
-        script.onload = script.onreadystatechange = () => {
-          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
-        }
-        script.onerror = reject
-        document.head.appendChild(script)
-      }),
-      getCSS: (url, id) => new Promise((resolve, reject) => {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = url
-        if (id) link.id = id
-        link.onload = link.onreadystatechange = () => {
-          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
-        }
-        link.onerror = reject
-        document.head.appendChild(link)
-      }),
-      addGlobalFn: (key, fn, name = false, parent = window) => {
-        if (!true && key.startsWith('pjax')) return
-        const globalFn = parent.globalFn || {}
-        globalFn[key] = globalFn[key] || {}
-        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
-        parent.globalFn = globalFn
-      }
-    }
-  
-      
-      const activateDarkMode = () => {
-        document.documentElement.setAttribute('data-theme', 'dark')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
-        }
-      }
-      const activateLightMode = () => {
-        document.documentElement.setAttribute('data-theme', 'light')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', 'ffffff')
-        }
-      }
-
-      btf.activateDarkMode = activateDarkMode
-      btf.activateLightMode = activateLightMode
-
-      const theme = saveToLocal.get('theme')
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Henry's Blog - 个人博客</title>
+    <meta name="author" content="Henry Hu">
+    <meta name="description" content="Henry的个人博客，分享网络安全、Python编程、NBA篮球等技术与生活内容。">
+    <meta name="keywords" content="Henry Hu, 网络安全, Python, NBA, 博客">
     
-          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Henry's Blog">
+    <meta property="og:description" content="Henry的个人博客，分享网络安全、Python编程、NBA篮球等技术与生活内容。">
+    <meta property="og:url" content="https://hhookurbanb.com">
+    <meta property="og:site_name" content="Henry's Blog">
+    <meta property="og:locale" content="zh_CN">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Henry's Blog">
+    <meta name="twitter:description" content="Henry的个人博客，分享网络安全、Python编程、NBA篮球等技术与生活内容。">
+    
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="/img/logo_red.jpg">
+    <link rel="canonical" href="https://hhookurbanb.com">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">
+    
+    <!-- Preconnect -->
+    <link rel="preconnect" href="//cdn.jsdelivr.net">
+    <link rel="preconnect" href="//busuanzi.ibruce.info">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">Henry's Blog</a>
+            <div class="nav-menu">
+                <a href="/" class="nav-link active">首页</a>
+                <a href="/about/" class="nav-link">关于</a>
+                <a href="/archives/" class="nav-link">文章</a>
+                <a href="/categories/" class="nav-link">分类</a>
+                <a href="/tags/" class="nav-link">标签</a>
+            </div>
+            <div class="nav-social">
+                <a href="https://github.com/HHookUrbanB" target="_blank" class="social-icon" title="GitHub">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="mailto:2919259685@qq.com" class="social-icon" title="Email">
+                    <i class="fas fa-envelope"></i>
+                </a>
+            </div>
+            <button class="nav-toggle" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 主页头部 -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Henry's Blog</h1>
+            <p class="hero-subtitle">莫道桑榆晚，为霞尚满天</p>
+            <div class="hero-tags">
+                <span class="tag">网络安全</span>
+                <span class="tag">Python</span>
+                <span class="tag">NBA</span>
+                <span class="tag">技术分享</span>
+            </div>
+            <div class="hero-cta">
+                <a href="/archives/" class="btn btn-primary">阅读文章</a>
+                <a href="/about/" class="btn btn-secondary">了解更多</a>
+            </div>
+        </div>
+        <div class="hero-scroll">
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </header>
+
+    <!-- 最新文章 -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">最新文章</h2>
+            <div class="posts-grid">
+                <!-- NBA新闻 -->
+                <article class="post-card">
+                    <div class="post-card-content">
+                        <div class="post-meta">
+                            <time datetime="2025-05-29">2025-05-29</time>
+                            <span class="post-category">NBA</span>
+                        </div>
+                        <h3 class="post-title">
+                            <a href="/2025/05/29/NBA%E6%96%B0%E9%97%BB%E6%B1%87%E6%80%BB/">今日NBA新闻汇总（Shams报道）</a>
+                        </h3>
+                        <p class="post-excerpt">据ESPN记者Shams Charania报道，今日NBA有多条重要消息，包括骑士加时取胜、76人管理层变动等。</p>
+                        <a href="/2025/05/29/NBA%E6%96%B0%E9%97%BB%E6%B1%87%E6%80%BB/" class="read-more">阅读全文 →</a>
+                    </div>
+                </article>
+
+                <!-- Python安全编程 -->
+                <article class="post-card">
+                    <div class="post-card-content">
+                        <div class="post-meta">
+                            <time datetime="2025-05-29">2025-05-29</time>
+                            <span class="post-category">技术</span>
+                        </div>
+                        <h3 class="post-title">
+                            <a href="/2025/05/29/Python%E5%AE%89%E5%85%A8%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/">Python安全编程基础：从入门到实践</a>
+                        </h3>
+                        <p class="post-excerpt">本文介绍Python在网络安全领域的应用，包括常用库、脚本编写和实际案例分析。适合初学者入门安全编程。</p>
+                        <a href="/2025/05/29/Python%E5%AE%89%E5%85%A8%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/" class="read-more">阅读全文 →</a>
+                    </div>
+                </article>
+
+                <!-- DeepSeek部署 -->
+                <article class="post-card">
+                    <div class="post-card-content">
+                        <div class="post-meta">
+                            <time datetime="2025-02-05">2025-02-05</time>
+                            <span class="post-category">技术</span>
+                        </div>
+                        <h3 class="post-title">
+                            <a href="/2025/02/05/DeepSeek%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2/">DeepSeek本地部署</a>
+                        </h3>
+                        <p class="post-excerpt">DeepSeek本地部署指南（MAC版）Step 1访问Ollama官网，下载适用于macOS的工具...</p>
+                        <a href="/2025/02/05/DeepSeek%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2/" class="read-more">阅读全文 →</a>
+                    </div>
+                </article>
+            </div>
+            <div class="section-cta">
+                <a href="/archives/" class="btn btn-outline">查看所有文章</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 分类展示 -->
+    <section class="section section-alt">
+        <div class="container">
+            <h2 class="section-title">文章分类</h2>
+            <div class="categories-grid">
+                <a href="/categories/NBA/" class="category-card">
+                    <div class="category-icon">🏀</div>
+                    <h3>NBA</h3>
+                    <p>篮球新闻与分析</p>
+                </a>
+                <a href="/categories/Technology/" class="category-card">
+                    <div class="category-icon">💻</div>
+                    <h3>技术</h3>
+                    <p>编程与网络安全</p>
+                </a>
+                <a href="/categories/Daily/" class="category-card">
+                    <div class="category-icon">📝</div>
+                    <h3>日常</h3>
+                    <p>生活记录与思考</p>
+                </a>
+                <a href="/categories/Study/" class="category-card">
+                    <div class="category-icon">📚</div>
+                    <h3>学习</h3>
+                    <p>课程与学习笔记</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- 关于预览 -->
+    <section class="section">
+        <div class="container">
+            <div class="about-preview">
+                <div class="about-content">
+                    <h2 class="section-title">关于我</h2>
+                    <p>我是Henry Hu，一名网络安全专业的学生，热爱技术、篮球和音乐。</p>
+                    <p>这个博客记录我的学习笔记、技术分享和生活感悟。</p>
+                    <a href="/about/" class="btn btn-primary">了解更多</a>
+                </div>
+                <div class="about-image">
+                    <img src="/img/3066.jpg" alt="Henry Hu" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">Henry's Blog</div>
+                <div class="footer-links">
+                    <a href="/">首页</a>
+                    <a href="/about/">关于</a>
+                    <a href="/archives/">文章</a>
+                    <a href="/categories/">分类</a>
+                    <a href="/tags/">标签</a>
+                </div>
+                <div class="footer-social">
+                    <a href="https://github.com/HHookUrbanB" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                    <a href="mailto:2919259685@qq.com" title="Email"><i class="fas fa-envelope"></i></a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Henry Hu. All rights reserved.</p>
+                <p>Powered by <a href="https://hexo.io" target="_blank">Hexo</a> & <a href="https://github.com" target="_blank">GitHub Pages</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="/js/main.js"></script>
+    <script>
+        // 移动端菜单切换
+        document.querySelector('.nav-toggle').addEventListener('click', function() {
+            document.querySelector('.nav-menu').classList.toggle('active');
+        });
         
-      
-      const asideStatus = saveToLocal.get('aside-status')
-      if (asideStatus !== undefined) {
-        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
-      }
-    
-      
-    const detectApple = () => {
-      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
-        document.documentElement.classList.add('apple')
-      }
-    }
-    detectApple()
-  
-    })()
-  </script><script>const GLOBAL_CONFIG = {
-  root: '/',
-  algolia: undefined,
-  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":1,"unescape":false,"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
-  translate: {"defaultEncoding":2,"translateDelay":0,"msgToTraditionalChinese":"繁","msgToSimplifiedChinese":"簡"},
-  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":true},
-  copy: {
-    success: '复制成功',
-    error: '复制失败',
-    noSupport: '浏览器不支持'
-  },
-  relativeDate: {
-    homepage: false,
-    post: false
-  },
-  runtime: '',
-  dateSuffix: {
-    just: '刚刚',
-    min: '分钟前',
-    hour: '小时前',
-    day: '天前',
-    month: '个月前'
-  },
-  copyright: undefined,
-  lightbox: 'null',
-  Snackbar: undefined,
-  infinitegrid: {
-    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
-    buttonText: '加载更多'
-  },
-  isPhotoFigcaption: false,
-  islazyloadPlugin: false,
-  isAnchor: false,
-  percent: {
-    toc: true,
-    rightside: true,
-  },
-  autoDarkmode: false
-}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
-  title: 'Henry\'s Blog',
-  isHighlightShrink: false,
-  isToc: false,
-  pageType: 'home'
-}</script><link rel="stylesheet" href="/css/cc-icons.min.css" type="text/css"  /><meta name="generator" content="Hexo 7.3.0"><link rel="stylesheet" href="/css/custom.css"></head><body><script>window.paceOptions = {
-  restartOnPushState: false
-}
-
-btf.addGlobalFn('pjaxSend', () => {
-  Pace.restart()
-}, 'pace_restart')
-
-</script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js/themes/blue/pace-theme-minimal.min.css"/><script src="https://cdn.jsdelivr.net/npm/pace-js/pace.min.js"></script><div id="web_bg" style="background-image: url(/img/back.jpg);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/img/3066.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">文章</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></li></ul></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 生活</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/shuoshuo/"><i class="fa-fw fa fa-plane"></i><span> 旅行</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/music/"><i class="fa-fw fa fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/links/"><i class="fa-fw fa fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/comment/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 个人详情</span></a></div></div></div></div><div class="page" id="body-wrap"><header class="full_page" id="page-header" style="background-image: url(/img/ysjf.jpg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Henry's Blog</span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> 主页</span></a></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fa fa-graduation-cap"></i><span> 博文</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/categories/"><i class="fa-fw fa fa-archive"></i><span> 分类</span></a></li><li><a class="site-page child" href="/tags/"><i class="fa-fw fa fa-tags"></i><span> 标签</span></a></li><li><a class="site-page child" href="/archives/"><i class="fa-fw fa fa-folder-open"></i><span> 归档</span></a></li></ul></div><div class="menus_item"><span class="site-page group"><i class="fa-fw fas fa-list"></i><span> 生活</span><i class="fas fa-chevron-down"></i></span><ul class="menus_item_child"><li><a class="site-page child" href="/shuoshuo/"><i class="fa-fw fa fa-plane"></i><span> 旅行</span></a></li><li><a class="site-page child" href="/photos/"><i class="fa-fw fa fa-camera-retro"></i><span> 相册</span></a></li><li><a class="site-page child" href="/music/"><i class="fa-fw fa fa-music"></i><span> 音乐</span></a></li><li><a class="site-page child" href="/movies/"><i class="fa-fw fas fa-video"></i><span> 影视</span></a></li></ul></div><div class="menus_item"><a class="site-page" href="/links/"><i class="fa-fw fa fa-link"></i><span> 友链</span></a></div><div class="menus_item"><a class="site-page" href="/comment/"><i class="fa-fw fa fa-paper-plane"></i><span> 留言板</span></a></div><div class="menus_item"><a class="site-page" href="/about/"><i class="fa-fw fas fa-heart"></i><span> 个人详情</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="site-info"><h1 id="site-title">Henry's Blog</h1><div id="site-subtitle"><span id="subtitle"></span></div><div id="site_social_icons"><a class="social-icon" href="https://github.com/HHookUrbanB" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:2919259685@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="tecent://AddContact/?fromID=45&amp;fromSubId=1&amp;subcmd=all&amp;uin=1401826600&amp;website=www.oicqzone.com" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #2ca5e0;"></i></a></div></div><div id="scroll-down"><i class="fas fa-angle-down scroll-down-effects"></i></div></header><main class="layout" id="content-inner"><div class="recent-posts nc" id="recent-posts"><div class="recent-post-items">
-<div class="recent-post-item">
-<div class="recent-post-info no-cover">
-<a class="article-title" href="/2025/05/29/NBA%E6%96%B0%E9%97%BB%E6%B1%87%E6%80%BB/" title="今日NBA新闻汇总（Shams报道）">今日NBA新闻汇总（Shams报道）</a>
-<div class="article-meta-wrap">
-<span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2025-05-29T12:00:00.000Z" title="发表于 2025-05-29 20:00:00">2025-05-29</time></span>
-<span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/NBA/">NBA</a></span>
-<span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-comments"></i><a href="/2025/05/29/NBA%E6%96%B0%E9%97%BB%E6%B1%87%E6%80%BB/#post-comment"><span class="valine-comment-count" data-xid="/2025/05/29/NBA%E6%96%B0%E9%97%BB%E6%B1%87%E6%80%BB/"><i class="fa-solid fa-spinner fa-spin"></i></span></a><span class="article-meta-label"> 条评论</span></span>
-</div>
-<div class="content">据ESPN记者Shams Charania报道，今日NBA有多条重要消息，包括骑士加时取胜、76人管理层变动等。</div>
-</div>
-</div>
-</div><nav id="pagination"><div class="pagination"><span class="page-number current">1</span></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/3066.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Henry Hu</div><div class="author-info-description">莫道桑榆晚，为霞尚满天</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">2</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">2</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/HHookUrbanB"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/HHookUrbanB" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:2919259685@qq.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a><a class="social-icon" href="tecent://AddContact/?fromID=45&amp;fromSubId=1&amp;subcmd=all&amp;uin=1401826600&amp;website=www.oicqzone.com" target="_blank" title="QQ"><i class="fab fa-qq" style="color: #2ca5e0;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">你怎么知道我要去听陈奕迅演唱会了:D</div></div><div class="sticky_layout">
-
-<div class="card-widget card-recent-post">
-<div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div>
-<div class="aside-list">
-<div class="aside-list-item no-cover">
-<div class="content">
-<a class="title" href="/2025/05/29/NBA%E6%96%B0%E9%97%BB%E6%B1%87%E6%80%BB/" title="今日NBA新闻汇总（Shams报道）">今日NBA新闻汇总（Shams报道）</a>
-<time datetime="2025-05-29T12:00:00.000Z" title="发表于 2025-05-29 20:00:00">2025-05-29</time>
-</div>
-</div>
-<div class="aside-list-item no-cover">
-<div class="content">
-<a class="title" href="/2025/05/29/Python%E5%AE%89%E5%85%A8%E7%BC%96%E7%A8%8B%E5%9F%BA%E7%A1%80/" title="Python安全编程基础：从入门到实践">Python安全编程基础：从入门到实践</a>
-<time datetime="2025-05-29T08:00:00.000Z" title="发表于 2025-05-29 16:00:00">2025-05-29</time>
-</div>
-</div>
-</div>
-</div>
-</div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>标签</span></div><div class="card-tag-cloud"><a href="/tags/BUAA/" style="font-size: 1.3em; color: #99a1ac">BUAA</a> <a href="/tags/%E9%9B%85%E6%80%9D/" style="font-size: 1.1em; color: #999">雅思</a> <a href="/tags/Course/" style="font-size: 1.1em; color: #999">Course</a> <a href="/tags/MAC/" style="font-size: 1.1em; color: #999">MAC</a> <a href="/tags/AI/" style="font-size: 1.1em; color: #999">AI</a> <a href="/tags/%E5%AE%9E%E4%B9%A0/" style="font-size: 1.5em; color: #99a9bf">实习</a></div></div><div class="card-widget card-archives">
-    <div class="item-headline">
-      <i class="fas fa-archive"></i>
-      <span>归档</span>
-      
-    </div>
-  
-    <ul class="card-archive-list">
-      
-        <li class="card-archive-list-item">
-          <a class="card-archive-list-link" href="/archives/2025/05/">
-            <span class="card-archive-list-date">
-              五月 2025
-            </span>
-            <span class="card-archive-list-count">1</span>
-          </a>
-        </li>
-      
-        <li class="card-archive-list-item">
-          <a class="card-archive-list-link" href="/archives/2025/03/">
-            <span class="card-archive-list-date">
-              三月 2025
-            </span>
-            <span class="card-archive-list-count">1</span>
-          </a>
-        </li>
-      
-        <li class="card-archive-list-item">
-          <a class="card-archive-list-link" href="/archives/2025/02/">
-            <span class="card-archive-list-date">
-              二月 2025
-            </span>
-            <span class="card-archive-list-count">1</span>
-          </a>
-        </li>
-      
-        <li class="card-archive-list-item">
-          <a class="card-archive-list-link" href="/archives/2025/01/">
-            <span class="card-archive-list-date">
-              一月 2025
-            </span>
-            <span class="card-archive-list-count">5</span>
-          </a>
-        </li>
-      
-    </ul>
-  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>网站信息</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">文章数目 :</div><div class="item-count">8</div></div><div class="webinfo-item"><div class="item-name">本站总字数 :</div><div class="item-count">2.7k</div></div><div class="webinfo-item"><div class="item-name">本站访客数 :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">本站总浏览量 :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">最后更新时间 :</div><div class="item-count" id="last-push-date" data-lastPushDate="2025-05-28T09:49:44.714Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer" style="background-image: url(/img/shape.png);"><div id="footer-wrap"><div class="copyright">&copy;2025 Henry.Hoo All Rights Reserved.</div><div class="framework-info"><span>壁纸来源：</span><a target="_blank" rel="noopener" href="https://www.ysjf.com">影视飓风</a><span class="footer-separator">|</span><span>感谢 Logo 设计：果壳</span></div><div class="footer_custom_text">Version 1.1.0</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="translateLink" type="button" title="简繁转换">繁</button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><script src="/js/tw_cn.js"></script><div class="js-pjax"><script>(() => {
-  function loadValine () {
-    function initValine () {
-      let initData = {
-        el: '#vcomment',
-        appId: 'vvxccagUAbuu22zdFFIfsiAo-gzGzoHsz',
-        appKey: 'KBFp06r1onzg95bEguWwNNKb',
-        serverURLs: ''
-      }
-      
-      const valine = new Valine(initData)
-    }
-
-    if (typeof Valine === 'function') initValine() 
-    else btf.getScript('https://cdn.jsdelivr.net/npm/valine/dist/Valine.min.js').then(initValine)
-  }
-
-  window.pjax ? loadValine() : window.addEventListener('load', loadValine)
-})()</script><script>window.typedJSFn = {
-  init: str => {
-    window.typed = new Typed('#subtitle', Object.assign({
-      strings: str,
-      startDelay: 300,
-      typeSpeed: 150,
-      loop: true,
-      backSpeed: 50,
-    }, null))
-  },
-  run: subtitleType => {
-    if (true) {
-      if (typeof Typed === 'function') {
-        subtitleType()
-      } else {
-        btf.getScript('https://cdn.jsdelivr.net/npm/typed.js/dist/typed.umd.min.js').then(subtitleType)
-      }
-    } else {
-      subtitleType()
-    }
-  }
-}
-btf.addGlobalFn('pjaxSendOnce', () => { typed.destroy() }, 'typedDestroy')
-</script><script>function subtitleType () {
-  if (true) {
-    typedJSFn.init(["HHookUrbanB"])
-  } else {
-    document.getElementById("subtitle").textContent = "HHookUrbanB"
-  }
-}
-typedJSFn.run(subtitleType)</script></div><div class="aplayer no-destroy" data-id="13171584492" data-server="netease" data-type="playlist" data-fixed="true" data-autoplay="true" data-lrcType="-1"> </div><script defer="defer" id="fluttering_ribbon" mobile="false" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/canvas-fluttering-ribbon.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/activate-power-mode.min.js"></script><script>POWERMODE.colorful = true;
-POWERMODE.shake = true;
-POWERMODE.mobile = true;
-document.body.addEventListener('input', POWERMODE);
-</script><script id="click-show-text" src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/dist/click-show-text.min.js" data-mobile="true" data-text="Henry" data-fontsize="15px" data-random="true" async="async"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/metingjs/dist/Meting.min.js"></script><script>(() => {
-  const destroyAplayer = () => {
-    if (window.aplayers) {
-      for (let i = 0; i < window.aplayers.length; i++) {
-        if (!window.aplayers[i].options.fixed) {
-          window.aplayers[i].destroy()
-        }
-      }
-    }
-  }
-
-  const runMetingJS = () => {
-    typeof loadMeting === 'function' && document.getElementsByClassName('aplayer').length && loadMeting()
-  }
-
-  btf.addGlobalFn('pjaxSend', destroyAplayer, 'destroyAplayer')
-  btf.addGlobalFn('pjaxComplete', loadMeting, 'runMetingJS')
-})()</script><script src="https://cdn.jsdelivr.net/npm/pjax/pjax.min.js"></script><script>(() => {
-  const pjaxSelectors = ["head > title","#config-diff","#body-wrap","#rightside-config-hide","#rightside-config-show",".js-pjax"]
-
-  window.pjax = new Pjax({
-    elements: 'a:not([target="_blank"])',
-    selectors: pjaxSelectors,
-    cacheBust: false,
-    analytics: false,
-    scrollRestoration: false
-  })
-
-  const triggerPjaxFn = (val) => {
-    if (!val) return
-    Object.values(val).forEach(fn => fn())
-  }
-
-  document.addEventListener('pjax:send', () => {
-    // removeEventListener
-    btf.removeGlobalFnEvent('pjaxSendOnce')
-    btf.removeGlobalFnEvent('themeChange')
-
-    // reset readmode
-    const $bodyClassList = document.body.classList
-    if ($bodyClassList.contains('read-mode')) $bodyClassList.remove('read-mode')
-
-    triggerPjaxFn(window.globalFn.pjaxSend)
-  })
-
-  document.addEventListener('pjax:complete', () => {
-    btf.removeGlobalFnEvent('pjaxCompleteOnce')
-    document.querySelectorAll('script[data-pjax]').forEach(item => {
-      const newScript = document.createElement('script')
-      const content = item.text || item.textContent || item.innerHTML || ""
-      Array.from(item.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value))
-      newScript.appendChild(document.createTextNode(content))
-      item.parentNode.replaceChild(newScript, item)
-    })
-
-    triggerPjaxFn(window.globalFn.pjaxComplete)
-  })
-
-  document.addEventListener('pjax:error', e => {
-    if (e.request.status === 404) {
-      pjax.loadUrl('/404.html')
-    }
-  })
-})()</script><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><span id="loading-status"></span><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="search-wrap"><div id="local-search-input"><div class="local-search-box"><input class="local-search-box--input" placeholder="搜索文章" type="text"/></div></div><hr/><div id="local-search-results"></div><div id="local-search-stats-wrap"></div></div></div><div id="search-mask"></div><script src="/js/search/local-search.js"></script></div></div></body></html>
+        // 滚动时导航栏效果
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('.nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+        
+        // 平滑滚动
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
