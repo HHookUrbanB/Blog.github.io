@@ -1,0 +1,30 @@
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title">文章分类</h1>
+        <p class="page-subtitle">按分类浏览文章</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="categories-grid">
+            <% 
+            var catInfo = {
+                'NBA': {icon: '🏀', desc: '篮球新闻与分析'},
+                '知识学习': {icon: '📖', desc: '学习新知识、新概念'},
+                '工具技术': {icon: '🛠️', desc: '学习新工具、新技术'},
+                '生活日常': {icon: '📝', desc: '生活记录与随笔'}
+            };
+            %>
+            <% site.categories.forEach(function(cat) { %>
+                <% var info = catInfo[cat.name] || {icon: '📁', desc: ''}; %>
+                <a href="/categories/<%= cat.name %>/" class="category-card">
+                    <div class="category-icon"><%= info.icon %></div>
+                    <h3><%= cat.name %></h3>
+                    <p><%= info.desc %></p>
+                    <span class="category-count"><%= cat.length %> 篇</span>
+                </a>
+            <% }) %>
+        </div>
+    </div>
+</section>

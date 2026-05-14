@@ -1,0 +1,70 @@
+<article class="post">
+    <div class="container container-narrow">
+        <!-- 面包屑导航 -->
+        <nav class="breadcrumb">
+            <a href="/">首页</a>
+            <span>/</span>
+            <% if (page.categories && page.categories.length) { %>
+                <a href="/categories/<%= page.categories.first().name %>/">
+                    <%= page.categories.first().name %>
+                </a>
+                <span>/</span>
+            <% } %>
+            <span class="current"><%= page.title %></span>
+        </nav>
+        
+        <!-- 文章头部 -->
+        <header class="post-header">
+            <h1 class="post-title"><%= page.title %></h1>
+            <div class="post-meta">
+                <time datetime="<%= date(page.date, 'YYYY-MM-DD') %>">
+                    <i class="far fa-calendar-alt"></i> <%= date(page.date, 'YYYY-MM-DD') %>
+                </time>
+                <% if (page.categories && page.categories.length) { %>
+                    <span class="post-category">
+                        <i class="fas fa-folder"></i>
+                        <a href="/categories/<%= page.categories.first().name %>/">
+                            <%= page.categories.first().name %>
+                        </a>
+                    </span>
+                <% } %>
+                <span class="post-word-count">
+                    <i class="fas fa-file-word"></i> <%= wordcount(page.content) %> 字
+                </span>
+                <span class="post-reading-time">
+                    <i class="far fa-clock"></i> <%= min2read(page.content) %> 分钟
+                </span>
+            </div>
+            <% if (page.tags && page.tags.length) { %>
+                <div class="post-tags">
+                    <% page.tags.each(function(tag) { %>
+                        <a href="/tags/<%= tag.name %>/" class="tag">#<%= tag.name %></a>
+                    <% }) %>
+                </div>
+            <% } %>
+        </header>
+        
+        <!-- 文章内容 -->
+        <div class="post-content" id="post-content">
+            <%- page.content %>
+        </div>
+        
+        <!-- 文章底部 -->
+        <footer class="post-footer">
+            <div class="post-nav">
+                <% if (page.prev) { %>
+                    <a href="<%= url_for(page.prev.path) %>" class="post-nav-prev">
+                        <i class="fas fa-arrow-left"></i>
+                        <span><%= page.prev.title %></span>
+                    </a>
+                <% } %>
+                <% if (page.next) { %>
+                    <a href="<%= url_for(page.next.path) %>" class="post-nav-next">
+                        <span><%= page.next.title %></span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                <% } %>
+            </div>
+        </footer>
+    </div>
+</article>

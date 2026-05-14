@@ -1,0 +1,21 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= page.title ? page.title + ' | ' + config.title : config.title %></title>
+<meta name="author" content="<%= config.author %>">
+<meta name="description" content="<%= page.description || config.description %>">
+
+<!-- Open Graph -->
+<meta property="og:type" content="<%= is_post() ? 'article' : 'website' %>">
+<meta property="og:title" content="<%= page.title || config.title %>">
+<meta property="og:description" content="<%= page.description || config.description %>">
+<meta property="og:url" content="<%= url %>">
+<meta property="og:site_name" content="<%= config.title %>">
+
+<!-- Favicon -->
+<link rel="shortcut icon" href="<%= theme.favicon || '/images/favicon.ico' %>">
+
+<!-- CSS -->
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css">

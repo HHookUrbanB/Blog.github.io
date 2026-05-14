@@ -1,0 +1,31 @@
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title"><%= page.category %></h1>
+        <p class="page-subtitle">共 <%= page.posts.length %> 篇文章</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="posts-grid">
+            <% page.posts.sort('date', -1).each(function(post) { %>
+                <article class="post-card">
+                    <div class="post-card-content">
+                        <div class="post-meta">
+                            <time datetime="<%= date(post.date, 'YYYY-MM-DD') %>">
+                                <%= date(post.date, 'YYYY-MM-DD') %>
+                            </time>
+                        </div>
+                        <h3 class="post-title">
+                            <a href="<%= url_for(post.path) %>"><%= post.title %></a>
+                        </h3>
+                        <p class="post-excerpt">
+                            <%= strip_html(post.excerpt || post.content).substring(0, 150) %>...
+                        </p>
+                        <a href="<%= url_for(post.path) %>" class="read-more">阅读全文 →</a>
+                    </div>
+                </article>
+            <% }) %>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,28 @@
+# Minimal Theme Configuration
+
+menu:
+  首页: /
+  关于: /about
+  归档: /archives
+  分类: /categories
+  标签: /tags
+
+social:
+  GitHub: https://github.com/HHookUrbanB
+  Email: mailto:2919259685@qq.com
+
+# 文章设置
+excerpt_length: 200
+show_toc: true
+show_comments: true
+
+# 评论系统 (Giscus)
+comments:
+  enable: false
+  repo: HHookUrbanB/Blog.github.io
+  repo_id: ""
+  category: Announcements
+  category_id: ""
+  mapping: pathname
+  reactions_enabled: true
+  emit_metadata: false

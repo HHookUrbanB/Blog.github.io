@@ -1,0 +1,20 @@
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title">标签</h1>
+        <p class="page-subtitle">按标签浏览文章</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="tag-cloud">
+            <% site.tags.forEach(function(tag) { %>
+                <a href="/tags/<%= tag.name %>/" class="tag-cloud-item" 
+                   style="font-size: <%= 14 + tag.length * 2 %>px">
+                    <%= tag.name %>
+                    <sup><%= tag.length %></sup>
+                </a>
+            <% }) %>
+        </div>
+    </div>
+</section>

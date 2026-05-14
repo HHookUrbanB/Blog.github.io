@@ -1,0 +1,24 @@
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-logo"><%= config.title %></div>
+            <div class="footer-links">
+                <% for (var i in theme.menu) { %>
+                    <a href="<%= url_for(theme.menu[i]) %>"><%= i %></a>
+                <% } %>
+            </div>
+            <div class="footer-social">
+                <% if (theme.social.GitHub) { %>
+                    <a href="<%= theme.social.GitHub %>" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
+                <% } %>
+                <% if (theme.social.Email) { %>
+                    <a href="<%= theme.social.Email %>" title="Email"><i class="fas fa-envelope"></i></a>
+                <% } %>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; <%= date(new Date(), 'YYYY') %> <%= config.author %>. All rights reserved.</p>
+            <p>Powered by <a href="https://hexo.io" target="_blank">Hexo</a> and <a href="https://github.com" target="_blank">GitHub Pages</a></p>
+        </div>
+    </div>
+</footer>

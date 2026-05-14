@@ -1,0 +1,34 @@
+<section class="page-header">
+    <div class="container">
+        <h1 class="page-title">文章归档</h1>
+        <p class="page-subtitle">共 <%= site.posts.length %> 篇文章</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container container-narrow">
+        <div class="archives">
+            <% 
+            var currentYear = '';
+            site.posts.sort('date', -1).each(function(post) {
+                var year = date(post.date, 'YYYY');
+                if (year !== currentYear) {
+                    currentYear = year;
+            %>
+                <h2 class="archive-year"><%= year %>年</h2>
+            <% } %>
+            <article class="archive-item">
+                <time datetime="<%= date(post.date, 'YYYY-MM-DD') %>">
+                    <%= date(post.date, 'MM-DD') %>
+                </time>
+                <a href="<%= url_for(post.path) %>"><%= post.title %></a>
+                <% if (post.categories && post.categories.length) { %>
+                    <span class="archive-category">
+                        <%= post.categories.first().name %>
+                    </span>
+                <% } %>
+            </article>
+            <% }) %>
+        </div>
+    </div>
+</section>
