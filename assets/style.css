@@ -28,3 +28,6 @@ button,input,select{font:inherit}input,select{color:var(--ink);background:var(--
 /* Stable section links stay discoverable by keyboard, pointer, and touch. */
 .prose .section-permalink{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin-left:.2em;vertical-align:middle;font:16px/1 var(--mono);color:var(--muted);text-decoration:none;border-radius:4px}.prose .section-permalink:hover,.prose .section-permalink:focus-visible{color:var(--accent);background:var(--accent-soft)}.article-toc a{min-height:44px;display:flex;align-items:center}.article-toc li{margin:2px 0}.back-link{min-height:44px;align-items:center}.prose h2:target,.prose h3:target{outline:2px solid var(--line);outline-offset:6px;border-radius:2px}
 @media print{.section-permalink{display:none!important}}
+
+/* Allow the public movie navigation entry to wrap on small screens. */
+@media(max-width:760px){.nav{flex-wrap:wrap;justify-content:flex-start;gap:8px 18px}}
