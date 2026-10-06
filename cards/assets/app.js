@@ -1,5 +1,7 @@
 (function () {
   'use strict';
+  if (window.CATALOG_READY) return;
+  if (!window.CATALOG_DATA || !window.CatalogCore) { const main = document.getElementById('main'); if (main) main.innerHTML = '<section class="panel"><h1>公共目录尚未完整载入</h1><p>请重新载入目录，再试一次。</p><a href="./?v=startup-recovery-2">重新载入目录</a></section>'; return; }
   const C = window.CatalogCore;
   const raw = window.CATALOG_DATA;
   const data = C.normalize(raw);
@@ -346,4 +348,6 @@
   window.addEventListener('hashchange',readRoute);
   window.addEventListener('popstate',readRoute);
   readRoute();
+  window.CATALOG_READY = true;
+  if (window.dispatchEvent) window.dispatchEvent(new Event('catalog-ready'));
 })();
