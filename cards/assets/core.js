@@ -4,7 +4,7 @@
   const clean = value => String(value ?? '').normalize('NFKC').toLocaleLowerCase().trim();
   const searchForm = value => clean(value).replace(/(^|\s)#(?=[\p{L}\p{N}])/gu, '$1').replace(/\b0*(\d+)\s*\/\s*0*(\d+)\b/g, (_, a, b) => `${Number(a)}/${Number(b)}`);
   const cardTypeLabels = {base:'基础卡 Base',insert:'特卡 Insert',base_variation:'基础变体',image_variation:'照片异图',autograph:'签字 Auto',relic:'纪念物 Relic',autograph_relic:'签字纪念物',redemption:'兑换 Redemption'};
-  const cardSearchText = c => searchForm([c.name, c.number, c.subset, c.rarity, c.site_category, c.series_label, c.original.card_supertype, c.original.card_subtype, cardTypeLabels[c.type], ...(c.original.other_players_as_listed || []), ...(c.alias_ids || []), ...(c.language === 'ja' && c.original.base_denominator ? c.original.physical_card_numbers.map(n => `${n}/${c.original.base_denominator}`) : [])].join(' '));
+  const cardSearchText = c => searchForm([c.name, c.number, c.subset, c.rarity, c.site_category, c.series_label, c.original.card_supertype, c.original.card_subtype, c.original.set_code, c.original.official_set_code, cardTypeLabels[c.type], c.original.parallel_name, c.original.serial_max!=null ? '/'+c.original.serial_max : '', ...(c.original.other_players_as_listed || []), ...(c.alias_ids || []), ...(c.language === 'ja' && c.original.base_denominator ? c.original.physical_card_numbers.map(n => `${n}/${c.original.base_denominator}`) : [])].join(' '));
   const safeUrl = value => { try { const u = new URL(value); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } };
   const unique = values => [...new Set(values.filter(Boolean))];
   const releaseState = value => /^released(?:_|$)/.test(value || '') || value === 'official_sale_documented_exact_global_release_unverified' ? 'released' : /^announced/.test(value || '') ? 'announced' : 'unknown';
@@ -17,7 +17,68 @@
     const q=searchForm(query);
     return data.panini.guide.families.filter(f=>!q||q.split(/\s+/).every(token=>searchForm([f.family_id,f.canonical_name,f.original_name,paniniFamilyAliases[f.family_id],f.beginner_explanation_zh,f.look_zh,...f.confusions_zh,...f.known_season_edition_examples.flatMap(e=>[e.original_product_name,e.season,e.subject_scope_zh,...e.verified_notes_zh])].join(' ')).includes(token)));
   }
+const slug = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+function decodePrizmProduct(compact, productId, { includeParallels = true } = {}) {
+  const p = compact.products.find((x) => x.metadata.product_id === productId);
+  if (!p) return [];
+  const m = p.metadata;
+  const source = compact.sources.find((s) => s.id === m.source_ids[0]);
+  const decode = (r) => {
+    const [gi, number, pi, ti, serial, sourceRow] = r;
+    const g = m.groups[gi];
+    const c = {
+      id: `${productId}-${slug(g.subset_name)}-${slug(number)}`,
+      product_id: productId,
+      season: m.season,
+      subset_id: slug(g.subset_name),
+      subset_name: g.subset_name,
+      card_number: number,
+      player_name: p.players[pi],
+      team_as_printed: p.teams[ti],
+      serial_max: serial,
+      canonical_subset_name: g.canonical_subset_name,
+      parallel_name: g.parallel_name,
+      is_parallel: g.is_parallel,
+      is_image_variation: g.is_image_variation,
+      card_type: g.card_type,
+      autograph: g.autograph,
+      memorabilia: g.memorabilia,
+      source_ids: m.source_ids,
+      source_urls: m.source_urls,
+      source_sheet: source.source_sheets[0].name,
+      source_row: sourceRow,
+      source_grade: m.source_grade,
+      verification_status: m.source_grade === 'official_primary' ? 'official_checklist_verified' : 'industry_checklist_verified',
+      physical_printed_number_verified: false,
+      physical_specimen_confirmed: false,
+      ...(p.row_overrides[String(sourceRow)] || {}),
+    };
+    return c;
+  };
+  const canonical = p.canonical_rows.map(decode);
+  const lookup = new Map();
+  const key = (c) => JSON.stringify([c.canonical_subset_name, c.card_number, c.player_name]);
+  for (const c of canonical) {
+    const k = key(c);
+    if (!lookup.has(k)) lookup.set(k, []);
+    lookup.get(k).push(c.id);
+  }
+  const rows = includeParallels ? [...canonical, ...p.explicit_parallel_rows.map(decode)] : canonical;
+  for (const c of rows) {
+    const matches = lookup.get(key(c)) || [];
+    c.canonical_card_id = matches.length === 1 ? matches[0] : null;
+    c.underlying_identity_id = `${productId}-identity-${slug(c.canonical_subset_name)}-${slug(c.card_number)}-${slug(c.player_name)}`;
+    if (!matches.length) c.canonical_row_status = 'parallel_only_identity_in_source';
+  }
+  return rows.sort((a, b) => a.source_row - b.source_row);
+}
+
   function normalize(bundle) {
+    const full=bundle.full_checklists||{products:[],cards:[],sources:[],parallel_evidence:[]};
+    const prizmFull=bundle.prizm_full_checklists||{products:[],sources:[]};
+    const extraCards=[...(full.cards||[]),...prizmFull.products.flatMap(p=>decodePrizmProduct(prizmFull,p.metadata.product_id)).map(c=>({...c,source_authority_as_listed:c.source_grade,source_grade:c.source_grade==='industry_checklist'?'secondary_specialist':c.source_grade,explicit_parallel_row:c.is_parallel}))];
+    const extraProducts=[...(full.products||[]),...prizmFull.products.map(p=>({...p.metadata,source_authority_as_listed:p.metadata.source_grade,source_grade:p.metadata.source_grade==='industry_checklist'?'secondary_specialist':p.metadata.source_grade}))];
     const productMap = new Map();
     bundle.basketball.products.forEach(p => productMap.set(p.id, p));
     bundle.pokemon_zh_hans.products.forEach(p => productMap.set(p.id, p));
@@ -26,25 +87,26 @@
     panini.products.forEach(p=>productMap.set(p.id,p));
     const licensed = bundle.licensed_nba || {products:[],sources:[],base_cards:[]};
     const giannis = bundle.giannis_catalog || {cards:[],base_parallel_evidence:[],coverage_matrix:[],sources:[]};
-    const aliases = {...(bundle.giannis_legacy_aliases || {}),...(bundle.pokemon_cn_integration?.legacy_aliases || {})};
+    const aliases = {...(bundle.giannis_legacy_aliases || {}),...(bundle.pokemon_cn_integration?.legacy_aliases || {}),...Object.fromEntries(extraCards.flatMap(c=>[...(c.legacy_ids||[]).filter(id=>id!==c.id).map(id=>[id,c.id]),...(c.count_as_separate_card_identity===false&&c.canonical_card_id?[[c.id,c.canonical_card_id]]:[])]))};
     const cn=bundle.pokemon_cn_verified || {card_identities:[],print_variants:[],unviewed_finish_rule_expectations:[],sources:[]};
     const jpPatches=bundle.pokemon_ja_name_completion?.entry_patches || {};
-    const sourceById = new Map([...licensed.sources,...giannis.sources,...panini.sources,...cn.sources].map(s => [s.id,s]));
+    const sourceById = new Map([...licensed.sources,...giannis.sources,...panini.sources,...cn.sources,...(full.sources||[]),...prizmFull.sources].map(s => [s.id,s]));
     const licensedIds = new Set(licensed.products.map(p=>p.id));
     licensed.products.forEach(p=>productMap.set(p.id,{...(productMap.get(p.id)||{}),...p}));
     const products = bundle.product_index.map(p => {
-      const detail = productMap.get(p.id) || {};
+      const imported=extraProducts.find(x=>x.product_id===p.id);
+      const detail = {...(productMap.get(p.id) || {}),...(imported?.product_details||{})};
       const family = p.domain === 'basketball' ? p.name_original.replace(/^\d{4}-\d{2}\s+/, '').replace(/\s+Basketball/, '') : detail.set_code || p.name_original;
-      return {...p, detail, family, family_id: detail.family_id || paniniFamilyOf(p) || family, source_grade:detail.source_grade || null, panini_anchor:panini.products.some(x=>x.id===p.id), licensed_nba: licensedIds.has(p.id), record_level: detail.record_level || p.record_level || 'legacy_product', entity_group: licensedIds.has(p.id) || panini.products.some(x=>x.id===p.id) ? groupOf(detail) : 'legacy', release_state: releaseState(p.status_as_of), region: p.market === 'China' ? '中国区域发行 · 语言未核实' : regions[p.language], region_key: p.market === 'China' ? 'China' : 'other_or_unspecified', series: p.season_or_era || '未标注',
+      return {...p,coverage:imported?.coverage_scope_zh||p.coverage,checklist_coverage:imported||null,detail, family, family_id: detail.family_id || paniniFamilyOf(p) || family, source_grade:imported?.source_grade || detail.source_grade || null, panini_anchor:panini.products.some(x=>x.id===p.id), licensed_nba: licensedIds.has(p.id), record_level: detail.record_level || p.record_level || 'legacy_product', entity_group: licensedIds.has(p.id) || panini.products.some(x=>x.id===p.id) ? groupOf(detail) : 'legacy', release_state: releaseState(p.status_as_of), region: p.market === 'China' ? '中国区域发行 · 语言未核实' : regions[p.language], region_key: p.market === 'China' ? 'China' : 'other_or_unspecified', series: p.season_or_era || '未标注',
         summary: detail.description_zh || detail.summary_zh || detail.theme_zh || p.coverage,
-        source_urls: unique([...(p.source_urls || []), ...(detail.sources || []).map(s => s.url)]).filter(safeUrl)};
+        source_urls: unique([...(p.source_urls || []),...(imported?.source_urls||[]), ...(detail.sources || []).map(s => s.url)]).filter(safeUrl)};
     });
-    const legacyCards = [...new Map([...bundle.basketball.base_cards, ...bundle.basketball.giannis_cards, ...licensed.base_cards, ...panini.base_cards].map(c => [c.id, c])).values()].filter(c => !aliases[c.id]);
-    const basketball = [...legacyCards,...giannis.cards.filter(c => c.count_as_separate_card_identity !== false)].map(c => ({
+    const legacyCards = [...new Map([...bundle.basketball.base_cards, ...bundle.basketball.giannis_cards, ...licensed.base_cards, ...panini.base_cards,...extraCards.filter(c=>(c.language||'en')==='en'&&c.count_as_separate_card_identity!==false)].map(c => [c.id, c])).values()].filter(c => !aliases[c.id]);
+    const basketball = [...new Map([...legacyCards,...giannis.cards.filter(c => c.count_as_separate_card_identity !== false).map(c=>({...c,...extraCards.find(x=>x.id===c.id)}))].map(c=>[c.id,c])).values()].map(c => ({
       id: c.id, alias_ids: Object.keys(aliases).filter(id=>aliases[id]===c.id), product_ids: [c.product_id], set_id: c.product_id, name: c.player_name,
       number: c.card_number, subset: c.subset_name, type: c.card_type, rarity: null,
       language: 'en', source_grade:c.source_grade || 'official_primary', record_kind:c.source_grade==='secondary_specialist'?'行业二级逐卡清单':'官方逐卡清单', proof_level:c.source_grade==='secondary_specialist'?'player_listed_secondary_checklist':'player_listed_official_checklist', original: c, image_url: null, sources: c.source_urls || [],
-      note: (c.team_as_printed ? `卡表球队：${c.team_as_printed}。` : '') + (c.source_grade==='secondary_specialist'?'行业二级卡单位置，非官方最终清单；':'官方逐卡身份；') + '不是实卡照片、平行版本或私人持有证明。' + (c.identity_warning_zh || ''),
+      note: (c.team_as_printed ? `卡表球队：${c.team_as_printed}。` : '') + (c.explicit_parallel_row?'该球员与平行版本由来源逐行列出；':'') + (c.source_grade==='secondary_specialist'?'行业二级卡单位置，非官方最终清单；':'官方逐卡身份；') + (c.explicit_parallel_row?'卡单列出不等于已经核验实物生产或实卡照片。':'不是实卡照片、未列出的平行版本或私人持有证明。') + (c.identity_warning_zh || ''),
     }));
     const chinese = (cn.card_identities.length?cn.card_identities:bundle.pokemon_zh_hans.representative_cards).map(c => {
       const verified=!!c.verification?.identity_metadata;
@@ -69,7 +131,8 @@
       language: 'ja', record_kind: '官网展示行', original: c, image_url: c.image_url,
       sources: c.source_urls || [], note: c.physical_card_numbers.length > 1 ? '此展示行对应 151、152 两张实物卡，不能按一张计数。' : (!c.category_is_printed_rarity ? `官网分组 ${c.official_site_category} 不作为卡面稀有度。` : (!c.name_original ? '名称未核实，保留空值；可查官方卡图。' : '官网公开预览，非完整秘密卡／加工版清单。')),
     }}));
-    const cards = [...basketball, ...chinese, ...japanese];
+    const extraChinese=extraCards.filter(c=>c.language==='zh-Hans').map(c=>({id:c.id,alias_ids:[],product_ids:[c.product_id],set_id:c.product_id,name:c.name||c.player_name,number:c.card_number,subset:c.subset_name||c.official_set_code||'',type:c.card_type||'checklist_card',rarity:c.rarity_symbol||null,language:'zh-Hans',source_grade:c.source_grade||'secondary_specialist',record_kind:c.source_grade==='official_primary'?'官方逐卡清单':'行业公开逐卡清单',original:c,image_url:null,sources:c.source_urls||[],listed_prints:(full.print_variants||[]).filter(v=>v.card_id===c.id),verified_prints:[],unviewed_expectations:[],availability_label:c.availability_label||'此套编号身份；具体工艺按所列来源',note:c.scope_note_zh||'具名逐卡清单；未逐张核验官方卡图、实物或全部工艺。'}));
+    const cards = [...basketball, ...chinese, ...japanese,...extraChinese];
     for (const p of products) {
       p.cards = cards.filter(c => c.product_ids.includes(p.id));
       p.related_cards = cards.filter(c => (c.research_context_ids||[]).includes(p.id) && !c.product_ids.includes(p.id));
@@ -95,12 +158,20 @@
     const query = searchForm(filters.query).replace(/字母哥|扬尼斯[·・]?阿德托昆博/g, 'giannis');
     return data.cards.filter(c => (filters.product ? c.product_ids.some(id => ids.has(id)) : [...c.product_ids,...(c.research_context_ids||[])].some(id => ids.has(id))) && (!filters.rarity || c.rarity===filters.rarity) && matchCardType(c,filters.card_type) && (!query || query.split(/\s+/).every(q => searchForm([cardSearchText(c), ...[...c.product_ids,...(c.research_context_ids||[])].map(id => data.products.find(p => p.id === id)?.name_original)].join(' ')).includes(q))));
   }
+  function filterProductChecklist(product, filters={}) {
+    const q=searchForm(filters.query).replace(/字母哥|扬尼斯[·・]?阿德托昆博/g,'giannis');
+    return product.cards.filter(c=>(!filters.rarity||c.rarity===filters.rarity)&&(!filters.subset||c.subset===filters.subset)&&(!filters.parallel||c.original.parallel_name===filters.parallel)&&matchCardType(c,filters.card_type)&&(!filters.numbering||(filters.numbering==='known'?c.original.serial_max!=null:filters.numbering==='unnumbered'?c.original.serial_numbered===false:c.original.serial_max==null&&c.original.serial_numbered!==false))&&(!q||q.split(/\s+/).every(t=>cardSearchText(c).includes(t))));
+  }
+  function productParallelEvidence(data,productId) {
+    const complete=(data.bundle.full_checklists?.parallel_evidence||[]).filter(r=>r.product_id===productId);
+    return complete.length?complete:data.giannis.base_parallel_evidence.filter(r=>r.product_id===productId);
+  }
   function cnAvailabilityText(scope) {
     return ({shared_series_base_gallery:'共享151画廊；望补充包的具体工艺收录未逐一核实',confirmed_booster:'太晶盛聚补充包 · 已确认关联',confirmed_hope_booster:'望补充包 · 已确认关联',confirmed_hope_coin_set:'望硬币套装 · 已确认关联；补充包未核实',confirmed_hope_coin_set_booster_unverified:'望硬币套装 · 已确认关联；补充包未核实'}[scope] || '发行关联未核实');
   }
   function filterChinese(data, filters={}) {
     const query=searchForm(filters.query);
-    return data.cards.filter(c=>c.language==='zh-Hans' && (!filters.rarity || c.rarity===filters.rarity) && (!filters.group || (filters.group==='taijing'?c.set_id==='pokemon-cn-taijing':filters.group==='151-gallery'?c.original.gallery_scope==='ordinary_numbered_001_to_151':c.original.gallery_scope==='additional_officially_featured')) && (!query || query.split(/\s+/).every(q=>cardSearchText(c).includes(q))));
+    return data.cards.filter(c=>c.language==='zh-Hans' && (!filters.rarity || c.rarity===filters.rarity) && (!filters.group || (filters.group==='gengu'?c.set_id==='pokemon-cn-gengu':filters.group==='taijing'?c.set_id==='pokemon-cn-taijing':filters.group==='151-gallery'?c.original.gallery_scope==='ordinary_numbered_001_to_151':c.original.gallery_scope==='additional_officially_featured')) && (!query || query.split(/\s+/).every(q=>cardSearchText(c).includes(q))));
   }
   function matchCardType(c, type) {
     if (!type || type === 'all') return true;
@@ -125,7 +196,7 @@
   }
   const numberedText = row => row.serial_numbered === true ? (row.numbering_notation || `/${row.serial_max}`) : row.serial_numbered === false ? '无编 · 非总印量' : '编号未说明';
   const csv = rows => '\uFEFF' + rows.map(row => row.map(value => { let v = String(value ?? ''); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }).join(',')).join('\r\n');
-  const api = {cnAvailabilityText,filterChinese,sourceGradeLabels,paniniFamilyAliases,paniniFamilyOf,filterPaniniFamilies,cardTypeLabels, matchCardType, filterGiannis, filterParallelEvidence, releaseState, levelLabels, groupOf, normalize, filterProducts, filterCards, matchProduct, clean, searchForm, cardSearchText, safeUrl, unique, regions, numberedText, csv};
+  const api = {decodePrizmProduct,filterProductChecklist,productParallelEvidence,cnAvailabilityText,filterChinese,sourceGradeLabels,paniniFamilyAliases,paniniFamilyOf,filterPaniniFamilies,cardTypeLabels, matchCardType, filterGiannis, filterParallelEvidence, releaseState, levelLabels, groupOf, normalize, filterProducts, filterCards, matchProduct, clean, searchForm, cardSearchText, safeUrl, unique, regions, numberedText, csv};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.CatalogCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);
