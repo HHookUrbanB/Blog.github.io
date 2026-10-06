@@ -3,8 +3,8 @@
   const regions = {und: '语言未核实', en: '英文版 · 篮球', 'zh-Hans': '简体中文 · 中国大陆', ja: '日文版 · 日本'};
   const clean = value => String(value ?? '').normalize('NFKC').toLocaleLowerCase().trim();
   const searchForm = value => clean(value).replace(/(^|\s)#(?=[\p{L}\p{N}])/gu, '$1').replace(/\b0*(\d+)\s*\/\s*0*(\d+)\b/g, (_, a, b) => `${Number(a)}/${Number(b)}`);
-  const cardTypeLabels = {base:'基础卡 Base',insert:'特卡 Insert',base_variation:'基础变体',image_variation:'照片异图',autograph:'签字 Auto',relic:'纪念物 Relic',autograph_relic:'签字纪念物',redemption:'兑换 Redemption'};
-  const cardSearchText = c => searchForm([c.name, c.number, c.subset, c.rarity, c.site_category, c.series_label, c.original.card_supertype, c.original.card_subtype, c.original.set_code, c.original.official_set_code, cardTypeLabels[c.type], c.original.parallel_name, c.original.serial_max!=null ? '/'+c.original.serial_max : '', ...(c.original.other_players_as_listed || []), ...(c.alias_ids || []), ...(c.language === 'ja' && c.original.base_denominator ? c.original.physical_card_numbers.map(n => `${n}/${c.original.base_denominator}`) : [])].join(' '));
+  const cardTypeLabels = {prospect:'前景卡 · 原类别未注明',unclassified:'原卡种未归类',base:'基础卡 Base',insert:'特卡 Insert',base_variation:'基础变体',image_variation:'照片异图',autograph:'签字 Auto',relic:'纪念物 Relic',autograph_relic:'签字纪念物',redemption:'兑换 Redemption'};
+  const cardSearchText = c => searchForm([c.name, c.number, c.subset, c.rarity, c.site_category, c.series_label, c.original.league_scope, ...(c.original.scope_tags||[]), c.original.card_supertype, c.original.card_subtype, c.original.set_code, c.original.official_set_code, cardTypeLabels[c.type], c.original.parallel_name, c.original.serial_max!=null ? '/'+c.original.serial_max : '', ...(c.original.other_players_as_listed || []), ...(c.alias_ids || []), ...(c.language === 'ja' && c.original.base_denominator ? c.original.physical_card_numbers.map(n => `${n}/${c.original.base_denominator}`) : [])].join(' '));
   const safeUrl = value => { try { const u = new URL(value); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } };
   const unique = values => [...new Set(values.filter(Boolean))];
   const releaseState = value => /^released(?:_|$)/.test(value || '') || value === 'official_sale_documented_exact_global_release_unverified' ? 'released' : /^announced/.test(value || '') ? 'announced' : 'unknown';
@@ -74,10 +74,16 @@ function decodePrizmProduct(compact, productId, { includeParallels = true } = {}
   return rows.sort((a, b) => a.source_row - b.source_row);
 }
 
+  function decodePackedCards(packed) {
+    if(!packed)return [];
+    if(packed.encoding!=='column-dictionary-v1')throw new Error('Unsupported checklist encoding');
+    return packed.groups.flatMap(g=>{const strings=new Set(g.string_columns),complex=new Set(g.json_columns||[]);return g.rows.map(row=>{const card={...g.defaults};g.columns.forEach((key,i)=>{const value=row[i];if(strings.has(i)){if(value!==-2)card[key]=value===null?null:g.strings[value];}else if(complex.has(i)){if(value!==-2)card[key]=value===null?null:g.json_values[value];}else if(!(value&&typeof value==='object'&&!Array.isArray(value)&&value.$absent===1)){card[key]=value;}});return card;});});
+  }
   function normalize(bundle) {
     const full=bundle.full_checklists||{products:[],cards:[],sources:[],parallel_evidence:[]};
+    const fullCards=[...(full.cards||[]),...decodePackedCards(full.packed_cards)];
     const prizmFull=bundle.prizm_full_checklists||{products:[],sources:[]};
-    const extraCards=[...(full.cards||[]),...prizmFull.products.flatMap(p=>decodePrizmProduct(prizmFull,p.metadata.product_id)).map(c=>({...c,source_authority_as_listed:c.source_grade,source_grade:c.source_grade==='industry_checklist'?'secondary_specialist':c.source_grade,explicit_parallel_row:c.is_parallel}))];
+    const extraCards=[...fullCards,...prizmFull.products.flatMap(p=>decodePrizmProduct(prizmFull,p.metadata.product_id)).map(c=>({...c,source_authority_as_listed:c.source_grade,source_grade:c.source_grade==='industry_checklist'?'secondary_specialist':c.source_grade,explicit_parallel_row:c.is_parallel}))];
     const extraProducts=[...(full.products||[]),...prizmFull.products.map(p=>({...p.metadata,source_authority_as_listed:p.metadata.source_grade,source_grade:p.metadata.source_grade==='industry_checklist'?'secondary_specialist':p.metadata.source_grade}))];
     const productMap = new Map();
     bundle.basketball.products.forEach(p => productMap.set(p.id, p));
@@ -88,6 +94,7 @@ function decodePrizmProduct(compact, productId, { includeParallels = true } = {}
     const licensed = bundle.licensed_nba || {products:[],sources:[],base_cards:[]};
     const giannis = bundle.giannis_catalog || {cards:[],base_parallel_evidence:[],coverage_matrix:[],sources:[]};
     const aliases = {...(bundle.giannis_legacy_aliases || {}),...(bundle.pokemon_cn_integration?.legacy_aliases || {}),...Object.fromEntries(extraCards.flatMap(c=>[...(c.legacy_ids||[]).filter(id=>id!==c.id).map(id=>[id,c.id]),...(c.count_as_separate_card_identity===false&&c.canonical_card_id?[[c.id,c.canonical_card_id]]:[])]))};
+    for(const key of Object.keys(aliases)){let target=aliases[key];const seen=new Set([key]);while(aliases[target]&&aliases[target]!==target&&!seen.has(target)){seen.add(target);target=aliases[target];}aliases[key]=target;}
     const cn=bundle.pokemon_cn_verified || {card_identities:[],print_variants:[],unviewed_finish_rule_expectations:[],sources:[]};
     const jpPatches=bundle.pokemon_ja_name_completion?.entry_patches || {};
     const sourceById = new Map([...licensed.sources,...giannis.sources,...panini.sources,...cn.sources,...(full.sources||[]),...prizmFull.sources].map(s => [s.id,s]));
@@ -102,9 +109,9 @@ function decodePrizmProduct(compact, productId, { includeParallels = true } = {}
         source_urls: unique([...(p.source_urls || []),...(imported?.source_urls||[]), ...(detail.sources || []).map(s => s.url)]).filter(safeUrl)};
     });
     const legacyCards = [...new Map([...bundle.basketball.base_cards, ...bundle.basketball.giannis_cards, ...licensed.base_cards, ...panini.base_cards,...extraCards.filter(c=>(c.language||'en')==='en'&&c.count_as_separate_card_identity!==false)].map(c => [c.id, c])).values()].filter(c => !aliases[c.id]);
-    const basketball = [...new Map([...legacyCards,...giannis.cards.filter(c => c.count_as_separate_card_identity !== false).map(c=>({...c,...extraCards.find(x=>x.id===c.id)}))].map(c=>[c.id,c])).values()].map(c => ({
+    const basketball = [...new Map([...legacyCards,...giannis.cards.filter(c => c.count_as_separate_card_identity !== false && !aliases[c.id]).map(c=>({...c,...extraCards.find(x=>x.id===c.id)}))].map(c=>[c.id,c])).values()].map(c => ({
       id: c.id, alias_ids: Object.keys(aliases).filter(id=>aliases[id]===c.id), product_ids: [c.product_id], set_id: c.product_id, name: c.player_name,
-      number: c.card_number, subset: c.subset_name, type: c.card_type, rarity: null,
+      number: c.card_number, subset: c.subset_name, type: c.ui_card_type || c.card_type || 'unclassified', rarity: null,
       language: 'en', source_grade:c.source_grade || 'official_primary', record_kind:c.source_grade==='secondary_specialist'?'行业二级逐卡清单':'官方逐卡清单', proof_level:c.source_grade==='secondary_specialist'?'player_listed_secondary_checklist':'player_listed_official_checklist', original: c, image_url: null, sources: c.source_urls || [],
       note: (c.team_as_printed ? `卡表球队：${c.team_as_printed}。` : '') + (c.explicit_parallel_row?'该球员与平行版本由来源逐行列出；':'') + (c.source_grade==='secondary_specialist'?'行业二级卡单位置，非官方最终清单；':'官方逐卡身份；') + (c.explicit_parallel_row?'卡单列出不等于已经核验实物生产或实卡照片。':'不是实卡照片、未列出的平行版本或私人持有证明。') + (c.identity_warning_zh || ''),
     }));
@@ -141,7 +148,9 @@ function decodePrizmProduct(compact, productId, { includeParallels = true } = {}
     }
     const cardById = new Map(cards.map(c=>[c.id,c]));
     const resolveCard = id => cardById.get(aliases[id] || id) || cardById.get(giannis.cards.find(c=>c.id===id)?.canonical_card_id);
-    return {products, cards, matrix: bundle.basketball.base_parallel_matrix, bundle, licensed, sourceById, panini, giannis, cn, aliases, resolveCard};
+    const completeCoverage=full.products.filter(p=>p.source_pages_total!=null);
+    const giannisView={...giannis,counts:{...giannis.counts,...(completeCoverage.length===20?{official_checklist_pages_read:completeCoverage.reduce((n,p)=>n+p.source_pages_read,0)}:{})},cards:giannis.cards.map(c=>({...c,id:c.count_as_separate_card_identity===false?c.id:aliases[c.id]||c.id,canonical_card_id:aliases[c.canonical_card_id]||c.canonical_card_id})),base_parallel_evidence:giannis.base_parallel_evidence.map(r=>({...r,related_base_card_ids:r.related_base_card_ids.map(id=>aliases[id]||id)}))};
+    return {products, cards, full_cards:fullCards, matrix: bundle.basketball.base_parallel_matrix, bundle, licensed, sourceById, panini, giannis:giannisView, cn, aliases, resolveCard};
   }
   function matchProduct(p, filters = {}) {
     return (!filters.scope || filters.scope === 'all' || p.section === filters.scope || (filters.scope === 'basketball' && p.domain === 'basketball')) &&
@@ -160,7 +169,7 @@ function decodePrizmProduct(compact, productId, { includeParallels = true } = {}
   }
   function filterProductChecklist(product, filters={}) {
     const q=searchForm(filters.query).replace(/字母哥|扬尼斯[·・]?阿德托昆博/g,'giannis');
-    return product.cards.filter(c=>(!filters.rarity||c.rarity===filters.rarity)&&(!filters.subset||c.subset===filters.subset)&&(!filters.parallel||c.original.parallel_name===filters.parallel)&&matchCardType(c,filters.card_type)&&(!filters.numbering||(filters.numbering==='known'?c.original.serial_max!=null:filters.numbering==='unnumbered'?c.original.serial_numbered===false:c.original.serial_max==null&&c.original.serial_numbered!==false))&&(!q||q.split(/\s+/).every(t=>cardSearchText(c).includes(t))));
+    return product.cards.filter(c=>(!filters.league_scope||c.original.league_scope===filters.league_scope)&&(!filters.rarity||c.rarity===filters.rarity)&&(!filters.subset||c.subset===filters.subset)&&(!filters.parallel||c.original.parallel_name===filters.parallel)&&matchCardType(c,filters.card_type)&&(!filters.numbering||(filters.numbering==='known'?c.original.serial_max!=null:filters.numbering==='unnumbered'?c.original.serial_numbered===false:c.original.serial_max==null&&c.original.serial_numbered!==false))&&(!q||q.split(/\s+/).every(t=>cardSearchText(c).includes(t))));
   }
   function productParallelEvidence(data,productId) {
     const complete=(data.bundle.full_checklists?.parallel_evidence||[]).filter(r=>r.product_id===productId);
@@ -196,7 +205,7 @@ function decodePrizmProduct(compact, productId, { includeParallels = true } = {}
   }
   const numberedText = row => row.serial_numbered === true ? (row.numbering_notation || `/${row.serial_max}`) : row.serial_numbered === false ? '无编 · 非总印量' : '编号未说明';
   const csv = rows => '\uFEFF' + rows.map(row => row.map(value => { let v = String(value ?? ''); if (/^[=+\-@\t\r]/.test(v)) v = "'" + v; return '"' + v.replace(/"/g, '""') + '"'; }).join(',')).join('\r\n');
-  const api = {decodePrizmProduct,filterProductChecklist,productParallelEvidence,cnAvailabilityText,filterChinese,sourceGradeLabels,paniniFamilyAliases,paniniFamilyOf,filterPaniniFamilies,cardTypeLabels, matchCardType, filterGiannis, filterParallelEvidence, releaseState, levelLabels, groupOf, normalize, filterProducts, filterCards, matchProduct, clean, searchForm, cardSearchText, safeUrl, unique, regions, numberedText, csv};
+  const api = {decodePackedCards,decodePrizmProduct,filterProductChecklist,productParallelEvidence,cnAvailabilityText,filterChinese,sourceGradeLabels,paniniFamilyAliases,paniniFamilyOf,filterPaniniFamilies,cardTypeLabels, matchCardType, filterGiannis, filterParallelEvidence, releaseState, levelLabels, groupOf, normalize, filterProducts, filterCards, matchProduct, clean, searchForm, cardSearchText, safeUrl, unique, regions, numberedText, csv};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.CatalogCore = api;
 })(typeof window !== 'undefined' ? window : globalThis);

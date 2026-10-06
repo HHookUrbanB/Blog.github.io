@@ -2,11 +2,11 @@
   'use strict';
   // A deferred script can fail independently: never infer that data exists merely
   // because its preceding script element has finished processing.
-  const resources = [{"id":"data","url":"assets/catalog-data.js?v=347dd09c69d74975"},{"id":"sources","url":"assets/source-links.js?v=02dadca236043c0c"},{"id":"core","url":"assets/core.js?v=f11d24c626a59e0d"},{"id":"routes","url":"assets/beginner-routes.js?v=9deb2301e9ad338f"},{"id":"journeys","url":"assets/journeys.js?v=ff7e1d9a93cd02e4"},{"id":"journeyUI","url":"assets/journey_ui.js?v=d57aba53c4c9c15e"},{"id":"app","url":"assets/app.js?v=b7b9830f2a71efbc"}];
+  const resources = [{"id":"data","url":"assets/catalog-data.js?v=698dc0a7287048cf"},{"id":"sources","url":"assets/source-links.js?v=02dadca236043c0c"},{"id":"core","url":"assets/core.js?v=db7dd25ff3b56538"},{"id":"routes","url":"assets/beginner-routes.js?v=9deb2301e9ad338f"},{"id":"journeys","url":"assets/journeys.js?v=ff7e1d9a93cd02e4"},{"id":"journeyUI","url":"assets/journey_ui.js?v=d57aba53c4c9c15e"},{"id":"app","url":"assets/app.js?v=bc7bb5b52fa4f34a"}];
   const validators = {
     data: () => !!(window.CATALOG_DATA && Array.isArray(window.CATALOG_DATA.product_index) && window.CATALOG_DATA.basketball && Array.isArray(window.CATALOG_DATA.basketball.products)),
     sources: () => Array.isArray(window.CATALOG_VISUALS),
-    core: () => !!(window.CatalogCore && typeof window.CatalogCore.normalize === 'function'),
+    core: () => !!(window.CatalogCore && typeof window.CatalogCore.normalize === 'function' && typeof window.CatalogCore.decodePackedCards === 'function'),
     routes: () => !!(window.BEGINNER_ROUTES && typeof window.BEGINNER_ROUTES === 'object'),
     journeys: () => !!window.CatalogJourneys,
     journeyUI: () => !!(window.CatalogJourneyUI && typeof window.CatalogJourneyUI.create === 'function'),
