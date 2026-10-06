@@ -1,3 +1,124 @@
+/* Same-document route, detail and photo history. No catalogue data is stored here. */
+(function(global){
+  'use strict';
+  if(global.CatalogModalHistory)return;
+  const KEY='catalogModalV1';
+  const copy=value=>JSON.parse(JSON.stringify(value));
+  global.CatalogModalHistory={create({history,location,capture,restore,readRoute,serialize=value=>value,schedule=fn=>setTimeout(fn,0)}){
+    const snapshots=new Map();
+    const prefix=Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+    let serial=0,current=null,pending=null,applying=false,lastURL=null;
+    const hash=()=>location.hash||'';
+    const id=()=>prefix+'-'+(++serial);
+    function owned(state){
+      const e=state?.[KEY];
+      return e?.version===1&&typeof e.id==='string'&&typeof e.root==='string'&&Array.isArray(e.parents)&&e.parents.length<=2&&
+        e.parents.every(p=>typeof p==='string')&&(!e.parents.length?e.id===e.root:e.parents[0]===e.root)&&
+        e.snapshot&&typeof e.snapshot.route==='string' ? e:null;
+    }
+    const live=()=>{const e=owned(history.state);return e&&e.snapshot.route===hash()?e:null;};
+    function write(entry,push=false,url=hash()){
+      const rest=history.state&&typeof history.state==='object'?history.state:{};
+      const persisted=copy(entry);persisted.snapshot=serialize(persisted.snapshot);
+      history[push?'pushState':'replaceState']({...rest,[KEY]:persisted},'',url||undefined);
+      lastURL=hash();
+    }
+    function checkpoint(persist=true){
+      if(!current||applying)return;
+      current.snapshot=capture();current.snapshot.route=lastURL??hash();
+      snapshots.set(current.id,copy(current));
+      if(persist&&live()?.id===current.id)write(current);
+    }
+    function fresh(){
+      const key=id();return {version:1,id:key,root:key,parents:[],snapshot:{...capture(),route:hash()}};
+    }
+    function apply(entry){
+      const previous=current;current=copy(entry);lastURL=hash();applying=true;
+      try{restore(copy(entry.snapshot),previous?.snapshot,entry,previous);}finally{applying=false;}
+      snapshots.set(current.id,copy(current));
+    }
+    function adoptRoute(){
+      applying=true;try{readRoute();}finally{applying=false;}
+      current=fresh();snapshots.set(current.id,copy(current));write(current);
+    }
+    function start(){
+      if('scrollRestoration' in history)history.scrollRestoration='manual';
+      const existing=live();
+      if(existing)apply(existing);else{current=fresh();write(current);snapshots.set(current.id,copy(current));}
+    }
+    function changed(){checkpoint(false);}
+    function renderLayer(render){applying=true;try{render();}finally{applying=false;}}
+    function pushLayer(render){
+      if(pending){pending.actions.push(()=>pushLayer(render));return;}
+      checkpoint();const previous=current;
+      renderLayer(render);
+      current={version:1,id:id(),root:previous.root,parents:[...previous.parents,previous.id],snapshot:{...capture(),route:hash()}};
+      snapshots.set(current.id,copy(current));write(current,true);
+    }
+    function detail(render){
+      if(pending){pending.actions.push(()=>detail(render));return;}
+      if(current.parents.length===2){closeTo(1,()=>detail(render));return;}
+      if(!current.parents.length)pushLayer(render);
+      else{renderLayer(render);checkpoint();}
+    }
+    function zoom(render){
+      if(pending){pending.actions.push(()=>zoom(render));return;}
+      if(current.parents.length===1)pushLayer(render);
+      else if(current.parents.length===2){renderLayer(render);checkpoint();}
+    }
+    function finishPending(){
+      if(!pending)return;
+      const actions=pending.actions;pending=null;
+      for(const action of actions)action();
+    }
+    function closeTo(depth,after){
+      if(pending){if(after)pending.actions.push(after);return;}
+      if(!current||current.parents.length<=depth){if(after)after();return;}
+      checkpoint();
+      const request=pending={from:current.id,target:current.parents[depth],depth,actions:after?[after]:[]};
+      // A browser Back already queued before Close wins. Never issue a second traversal
+      // from the old layer, and never try to "repair" native Back by pushing entries.
+      schedule(()=>schedule(()=>{
+        if(pending!==request)return;
+        const here=live();
+        if(!here||here.id!==request.from){transition();return;}
+        history.go(depth-current.parents.length);
+      }));
+    }
+    function atBase(action){
+      if(pending){pending.actions.push(()=>atBase(action));return;}
+      if(current.parents.length){closeTo(0,()=>atBase(action));return;}
+      checkpoint();action();checkpoint();
+    }
+    function navigate(url){atBase(()=>{
+      if(hash()===url){readRoute();checkpoint();return;}
+      checkpoint();history.pushState(null,'',url);adoptRoute();
+    });}
+    function replaceRoute(url,push=false){
+      if(applying)return;
+      // Called by existing filter renderers after their state mutation. Their normal
+      // input/click checkpoint retains the previous route before a pushed choice.
+      if(push){history.pushState(null,'',url);current=fresh();}
+      else {history.replaceState(history.state,'',url);current.snapshot={...capture(),route:hash()};}
+      lastURL=hash();checkpoint();
+    }
+    function transition(){
+      const incoming=live();
+      if(incoming?.id===current?.id&&hash()===lastURL)return;
+      checkpoint(false);
+      if(incoming)apply(snapshots.get(incoming.id)||incoming);else adoptRoute();
+      finishPending();
+    }
+    return {start,transition,changed,checkpoint,detail,zoom,navigate,replaceRoute,atBase,
+      closeDetail:after=>closeTo(0,after),closeZoom(after){const expected=current?.parents[1];closeTo(1,after?()=>{if(current?.id===expected&&current.parents.length===1)after();}:undefined);},
+      leave(){pending=null;checkpoint();},get restoring(){return applying;},get depth(){return current?.parents.length||0;},get busy(){return !!pending;},
+      // Stable-ID application actions may wait for an in-flight close. Native closes
+      // themselves remain idempotent and are not replayed against a lower layer.
+      defer(action){if(!pending)return false;pending.actions.push(action);return true;}
+    };
+  }};
+})(window);
+
 (function () {
   'use strict';
   if (window.CATALOG_READY) return;
@@ -26,8 +147,9 @@
   const icon = (name,size=18) => `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${iconPaths[name] || iconPaths.book}</svg>`;
   const titles = {journeys:'新手路线',catalog:'百科目录',topps:'Topps NBA 总图',panini:'Panini 家族入门','pokemon-cn':'简中宝可梦',giannis:'字母哥专题',guide:'入门笔记'};
   const state = {detailProductId:null, detailFilters:{query:'',subset:'',card_type:'',rarity:'',parallel:'',numbering:'',league_scope:''},detailPage:1,detailEvidenceQuery:'',detailEvidenceFormat:'',detailEvidenceSubset:'',detailEvidencePage:1,cnFilters:{query:'',group:'',rarity:''},cnPage:1,page:'catalog',view:'products',pageNumber:1,paniniQuery:'',filters:{scope:'all',query:'',family:'',source_grade:'',brand:'',language:'',series:'',product:'',status:'',region:'',entity_group:'',card_type:'',rarity:''}, giannisFilters:{query:'',product:'',card_type:'',status:''}, giannisPage:1, evidenceFilters:{product:'',base_id:'',query:'',configuration:'',numbering:''}, evidencePage:1, mapFilters:{query:'',entity_group:'',status:'',region:''}, matrixQuery:'',matrixNumber:'',matrixConfig:''};
-  const journey = window.CatalogJourneyUI && window.BEGINNER_ROUTES ? window.CatalogJourneyUI.create({model:window.BEGINNER_ROUTES,data,esc,icon,footer:()=>footer(),download:result=>download('journey',result),openRoute:hash=>{if($('detail-dialog').open)$('detail-dialog').close();location.hash=hash;readRoute();}}) : null;
+  const journey = window.CatalogJourneyUI && window.BEGINNER_ROUTES ? window.CatalogJourneyUI.create({model:window.BEGINNER_ROUTES,data,esc,icon,footer:()=>footer(),download:result=>download('journey',result),openRoute:hash=>uiHistory.navigate(hash)}) : null;
   let lastPageHash = '#catalog';
+  let detailView=null;
   const sourceTitles = new Map(raw.basketball.sources.map(s=>[s.url,s.title]));
   [...(raw.full_checklists?.sources||[]),...(raw.prizm_full_checklists?.sources||[])].forEach(s=>sourceTitles.set(s.url,s.title));
   data.cn.sources.forEach(s=>sourceTitles.set(s.url,s.title));
@@ -163,6 +285,10 @@
     $('detail-evidence-results').innerHTML=`<div class="result-meta" role="status"><span>${rows.length} 条产品卡组证据</span></div>${rows.length?`<div class="table-wrap"><table><thead><tr><th>原始卡组 / 平行名称</th><th>编限</th><th>盒型概率原文</th><th>来源位置</th></tr></thead><tbody>${rows.slice((state.detailEvidencePage-1)*20,state.detailEvidencePage*20).map(r=>`<tr><td>${esc(r.official_odds_label||r.name||r.parallel_name)}${r.source_anomaly?`<span class="row-sub">来源异常：${esc(r.source_anomaly)}</span>`:''}${r.odds_status==='source_formula_error_not_probability'||Object.values(r.odds_by_configuration||{}).some(v=>/#DIV\/0!|^\d+:0$/.test(v))?'<span class="badge pending">来源公式错误；不能视为概率</span>':''}<span class="row-sub">产品卡组证据；不是球员实卡确认</span></td><td>${r.serial_max!=null?'/'+esc(r.serial_max):r.serial_status==='officially_unnumbered'?'来源明确无编':'来源未说明'}</td><td>${Object.entries(r.odds_by_configuration||{}).filter(([k])=>!state.detailEvidenceFormat||k===state.detailEvidenceFormat).map(([k,v])=>`<span class="row-sub">${esc(k)}：${esc(v)}</span>`).join('')||'本行未列数值'}</td><td>${(r.source_urls?.[0]||r.source_url)?pageLink(r.source_urls?.[0]||r.source_url,r.source_pdf_page||r.source_page,'来源'):esc(r.source_id||'见产品来源')}</td></tr>`).join('')}</tbody></table></div><div class="pagination"><button class="btn" data-action="detail-evidence-previous" ${state.detailEvidencePage===1?'disabled':''}>← 上一页</button><span>${state.detailEvidencePage} / ${pages}</span><button class="btn" data-action="detail-evidence-next" ${state.detailEvidencePage===pages?'disabled':''}>下一页 →</button></div>`:notice('没有匹配的平行证据。')}`;
   }
   function productDetail(id) {
+    if(!data.products.some(p=>p.id===id))return;
+    uiHistory.detail(()=>{detailView={kind:'product',id};renderProductDetail(id);});
+  }
+  function renderProductDetail(id) {
     const p=data.products.find(p=>p.id===id);if(!p)return;
     if(state.detailProductId!==id){state.detailFilters={query:'',subset:'',card_type:'',rarity:'',parallel:'',numbering:'',league_scope:''};state.detailPage=1;state.detailEvidenceQuery='';state.detailEvidenceFormat='';state.detailEvidenceSubset='';state.detailEvidencePage=1;}state.detailProductId=id;
     const d=p.detail;
@@ -184,6 +310,10 @@
     renderDetailCards();renderDetailEvidence();
   }
   function cardDetail(id) {
+    if(!data.resolveCard(id))return;
+    uiHistory.detail(()=>{detailView={kind:'card',id};renderCardDetail(id);});
+  }
+  function renderCardDetail(id) {
     const c=data.resolveCard(id);if(!c)return;
     const product=data.products.find(p=>p.id===c.product_ids[0]);
     const cardImage=visuals.find(v=>v.card_id && data.resolveCard(v.card_id)?.id===c.id && visualAsset(v));
@@ -224,7 +354,7 @@
   }
   function saveGiannisHash(){
     const params=new URLSearchParams();for(const[k,v]of Object.entries(state.giannisFilters))if(v)params.set(k,v);
-    try{history.replaceState(null,'','#giannis'+(params.toString()?'?'+params.toString():''));}catch{}
+    try{uiHistory.replaceRoute('#giannis'+(params.toString()?'?'+params.toString():''));}catch{}
   }
   function renderGiannisResults(){
     const rows=C.filterGiannis(data,state.giannisFilters), count=Math.max(1,Math.ceil(rows.length/25));
@@ -297,7 +427,7 @@
     const rows=C.filterChinese(data,state.cnFilters),pages=Math.max(1,Math.ceil(rows.length/25));state.cnPage=Math.min(pages,state.cnPage);
     $('cn-results').innerHTML=`<div class="result-meta" role="status" aria-live="polite"><span>${rows.length} 个已收录编号身份</span><span>工艺记录与未核验预期见单卡详情</span></div>${rows.length?cardTable(rows.slice((state.cnPage-1)*25,state.cnPage*25)):notice('没有匹配的已录入身份。试试完整卡名、原卡号或清除稀有度筛选；空结果不等于不存在。')}${rows.length?`<div class="pagination"><button class="btn" data-action="cn-previous" ${state.cnPage===1?'disabled':''}>← 上一页</button><span>${state.cnPage} / ${pages}</span><button class="btn" data-action="cn-next" ${state.cnPage===pages?'disabled':''}>下一页 →</button></div>`:''}`;
   }
-  function saveChineseHash(){const params=new URLSearchParams();for(const [k,v]of Object.entries(state.cnFilters))if(v)params.set(k,v);try{history.replaceState(null,'','#pokemon-cn'+(params.toString()?'?'+params.toString():''));}catch{}}
+  function saveChineseHash(){const params=new URLSearchParams();for(const [k,v]of Object.entries(state.cnFilters))if(v)params.set(k,v);try{uiHistory.replaceRoute('#pokemon-cn'+(params.toString()?'?'+params.toString():''));}catch{}}
 
   function renderGuide() {
     const g=raw.beginner_glossary;
@@ -309,7 +439,7 @@
     for(const [k,v] of Object.entries(state.filters))if(v&&!(k==='scope'&&v==='all'))params.set(k,v);
     if(state.view!=='products')params.set('view',state.view);
     const suffix=params.toString();
-    try{history.replaceState(null,'','#catalog'+(suffix?'?'+suffix:''));}catch{}
+    try{uiHistory.replaceRoute('#catalog'+(suffix?'?'+suffix:''));}catch{}
   }
   function readRoute() {
     const hash=location.hash.slice(1);const [page,paramString]=hash.split('?');
@@ -324,13 +454,15 @@
     if(state.page==='giannis'){const params=new URLSearchParams(paramString||'');for(const k of Object.keys(state.giannisFilters))state.giannisFilters[k]=params.get(k)||'';state.giannisPage=1;}
     state.pageNumber=1;renderPage();lastPageHash=location.hash || '#catalog';
   }
-  function navigate(page) {
+  function navigate(page) {uiHistory.atBase(()=>navigateAtBase(page));}
+  function navigateAtBase(page) {
     if(page==='journeys' && journey && state.page!=='journeys'){journey.state.returnHash=location.hash || '#catalog';lastPageHash=journey.state.returnHash;}
-    if($('detail-dialog').open)$('detail-dialog').close();
     const target=page==='journeys' && journey ? journey.state.lastHash : '#'+page;
-    if(location.hash===target){state.page=page;renderPage();}else location.hash=target;
+    uiHistory.navigate(target);
   }
   function renderPage() {
+    window.ChromeExampleWall?.dismiss();
+    detailView=null;
     if($('detail-dialog').open)$('detail-dialog').close();
     $('breadcrumb-label').textContent=titles[state.page];
     document.title=`${titles[state.page]} · 卡序 — Henry Hu`;
@@ -338,7 +470,8 @@
     if(state.page==='journeys' && journey)journey.render();else if(state.page==='catalog')renderCatalog();else if(state.page==='topps')renderToppsMap();else if(state.page==='panini')renderPanini();else if(state.page==='pokemon-cn')renderChinese();else if(state.page==='giannis')renderGiannis();else if(state.page==='guide')renderGuide();else renderCatalog();
     window.scrollTo({top:0,behavior:'instant'});
   }
-  function browseProduct(id) {
+  function browseProduct(id) {uiHistory.atBase(()=>browseProductAtBase(id));}
+  function browseProductAtBase(id) {
     $('detail-dialog').close();state.page='catalog';state.view='cards';state.pageNumber=1;
     state.filters={scope:'all',query:'',family:'',source_grade:'',brand:'',language:'',series:'',product:id,status:'',region:'',entity_group:'',card_type:'',rarity:''};
     saveFilterHash();renderPage();$('explorer').scrollIntoView({block:'start'});
@@ -366,17 +499,24 @@
   document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
   $('skip-link').addEventListener('click', e=>{e.preventDefault();$('main').focus({preventScroll:true});$('main').scrollIntoView({block:'start'});});
   $('close-dialog').innerHTML=icon('close',16);
-  $('close-dialog').addEventListener('click',()=>$('detail-dialog').close());
+  $('close-dialog').addEventListener('click',()=>uiHistory.closeDetail());
+  $('detail-dialog').addEventListener('cancel',e=>{e.preventDefault();uiHistory.closeDetail();});
+  $('detail-dialog').addEventListener('close',()=>{if(!$('detail-dialog').open&&!uiHistory.restoring&&uiHistory.depth)uiHistory.closeDetail();});
   document.addEventListener('click',e=>{
-    const b=e.target.closest('button,[data-page]');if(!b)return;
+    const b=e.target.closest('button,[data-page]');if(b)handleAppAction(b);
+  });
+  function handleAppAction(b){
+    const dataset={...b.dataset};
+    if(uiHistory.defer(()=>handleAppAction({dataset,setAttribute(){}})))return;
+    if((dataset.product||dataset.card||dataset.cardEvidence)&&b.focus)b.focus({preventScroll:true});
     if(journey && journey.action(b.dataset))return;
     if(b.dataset.page){navigate(b.dataset.page);return;}
     if(b.dataset.cnQuery){state.cnFilters={query:b.dataset.cnQuery,group:'',rarity:''};state.cnPage=1;renderChinese();saveChineseHash();return;}
-    if(b.dataset.family){state.paniniQuery=b.dataset.family;navigate('panini');return;}
+    if(b.dataset.family){uiHistory.atBase(()=>{state.paniniQuery=b.dataset.family;navigate('panini');});return;}
     if(b.dataset.product){productDetail(b.dataset.product);return;}
     if(b.dataset.card){cardDetail(b.dataset.card);return;}
     if(b.dataset.cardEvidence){const c=data.resolveCard(b.dataset.cardEvidence);productDetail(c.product_ids[0]);state.detailEvidenceSubset=c.subset;state.detailEvidencePage=1;if($('detail-evidence-subset'))$('detail-evidence-subset').value=c.subset;renderDetailEvidence();$('detail-evidence-results').scrollIntoView({block:'start'});return;}
-    if(b.dataset.evidenceBase){const c=data.resolveCard(b.dataset.evidenceBase);$('detail-dialog').close();state.evidenceFilters={product:c.set_id,base_id:c.id,query:'',configuration:'',numbering:''};state.evidencePage=1;if(state.page!=='giannis'){state.page='giannis';saveGiannisHash();renderPage();}else renderGiannis();$('giannis-evidence').scrollIntoView({block:'start'});return;}
+    if(b.dataset.evidenceBase){uiHistory.atBase(()=>{const c=data.resolveCard(b.dataset.evidenceBase);state.evidenceFilters={product:c.set_id,base_id:c.id,query:'',configuration:'',numbering:''};state.evidencePage=1;if(state.page!=='giannis'){state.page='giannis';saveGiannisHash();renderPage();}else renderGiannis();$('giannis-evidence').scrollIntoView({block:'start'});});return;}
     if(b.dataset.browseProduct){browseProduct(b.dataset.browseProduct);return;}
     if(b.dataset.export){download(b.dataset.export);return;}
     if(b.dataset.view){state.view=b.dataset.view;state.pageNumber=1;document.querySelectorAll('[data-view]').forEach(el=>el.setAttribute('aria-pressed',String(el.dataset.view===state.view)));renderResults();saveFilterHash();return;}
@@ -398,13 +538,82 @@
     if(action==='cn-next'||action==='cn-previous'){state.cnPage=Math.max(1,state.cnPage+(action==='cn-next'?1:-1));renderChineseResults();$('cn-finder').scrollIntoView({block:'start'});}
     if(action==='reset-map'){state.mapFilters={query:'',entity_group:'',status:'',region:''};renderToppsMap();}
     if(action==='previous'||action==='next'){state.pageNumber+=action==='next'?1:-1;renderResults();$('explorer').scrollIntoView({block:'start'});}
-    if(action==='giannis-cards'){state.page='catalog';state.view='cards';state.pageNumber=1;state.filters={scope:'basketball',query:'字母哥',family:'',source_grade:'',brand:'',language:'',series:'',product:'',status:'',region:'',entity_group:'',card_type:'',rarity:''};saveFilterHash();renderPage();$('explorer').scrollIntoView({block:'start'});}
-  });
+    if(action==='giannis-cards'){uiHistory.atBase(()=>{state.page='catalog';state.view='cards';state.pageNumber=1;state.filters={scope:'basketball',query:'字母哥',family:'',source_grade:'',brand:'',language:'',series:'',product:'',status:'',region:'',entity_group:'',card_type:'',rarity:''};saveFilterHash();renderPage();$('explorer').scrollIntoView({block:'start'});});}
+  }
   document.addEventListener('change',e=>{if(e.target.dataset.detailFilter){state.detailFilters[e.target.dataset.detailFilter]=e.target.value;state.detailPage=1;renderDetailCards();return;}if(journey && journey.change(e.target))return;if(e.target.dataset.cnFilter){state.cnFilters[e.target.dataset.cnFilter]=e.target.value;state.cnPage=1;renderChineseResults();saveChineseHash();return;}if(e.target.dataset.giannisFilter){state.giannisFilters[e.target.dataset.giannisFilter]=e.target.value;state.giannisPage=1;renderGiannisResults();saveGiannisHash();return;}if(e.target.dataset.mapFilter){state.mapFilters[e.target.dataset.mapFilter]=e.target.value;renderMapResults();return;}if(e.target.dataset.filter){state.filters[e.target.dataset.filter]=e.target.value;state.pageNumber=1;renderResults();saveFilterHash();}});
   document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)&&!$('detail-dialog').open&&state.page==='catalog'){e.preventDefault();$('search').focus();}});
-  window.addEventListener('hashchange',readRoute);
-  window.addEventListener('popstate',readRoute);
+  const clone=value=>JSON.parse(JSON.stringify(value));
+  const focusAttributes=['data-product','data-card','data-card-evidence','data-action','data-page','data-ce-open','data-ce-filter','data-ce-close','data-ce-prev','data-ce-next','data-detail-filter','data-filter','data-view','data-scope'];
+  function focusKey(el){
+    if(!el)return null;
+    if(el.id)return {id:el.id};
+    const attr=focusAttributes.find(k=>el.hasAttribute?.(k));
+    if(!attr)return null;
+    const value=el.getAttribute(attr),scope=el.closest?.('#detail-dialog')?'detail':'main';
+    const root=scope==='detail'?$('detail-dialog'):document;
+    const matches=Array.from(root.querySelectorAll('['+attr+']')).filter(x=>x.getAttribute(attr)===value);
+    return {attr,value,scope,index:Math.max(0,matches.indexOf(el))};
+  }
+  function findFocus(key){
+    if(!key)return null;
+    if(key.id)return $(key.id);
+    const root=key.scope==='detail'?$('detail-dialog'):document;
+    return Array.from(root.querySelectorAll('['+key.attr+']')).filter(x=>x.getAttribute(key.attr)===key.value)[key.index];
+  }
+  function captureUI(){
+    const dialog=$('detail-dialog');
+    return {app:clone(state),journey:journey?clone(journey.state):null,lastPageHash,
+      detail:detailView,wall:detailView?.kind==='product'&&detailView.id==='topps-2025-26-chrome'?window.ChromeExampleWall?.wallState()||null:null,
+      zoom:window.ChromeExampleWall?.zoomState()||null,
+      scroll:{x:window.scrollX||0,y:window.scrollY||0,detailX:dialog.scrollLeft||0,detailY:dialog.scrollTop||0},focus:focusKey(document.activeElement)};
+  }
+  const mainState=s=>JSON.stringify(Object.fromEntries(Object.entries(s||{}).filter(([k])=>!k.startsWith('detail'))));
+  const detailState=s=>JSON.stringify(Object.fromEntries(Object.entries(s||{}).filter(([k])=>k.startsWith('detail'))));
+  function restoreUI(snapshot,previous,entry,previousEntry){
+    window.ChromeExampleWall?.dismiss();
+    const rerender=!previous||entry.root!==previousEntry.root||mainState(snapshot.app)!==mainState(previous.app)||JSON.stringify(snapshot.journey)!==JSON.stringify(previous.journey);
+    Object.assign(state,clone(snapshot.app));
+    // Closing a detail keeps its last filter choices for a normal reopen, matching
+    // the original UI; the route snapshot still owns catalogue filters/pagination.
+    if(!snapshot.detail&&previous?.detail&&!entry.parents.length&&previousEntry.parents.length&&entry.root===previousEntry.root)for(const [key,value]of Object.entries(previous.app))if(key.startsWith('detail'))state[key]=clone(value);
+    if(journey&&snapshot.journey)Object.assign(journey.state,clone(snapshot.journey));
+    lastPageHash=snapshot.lastPageHash||snapshot.route||'#catalog';
+    if(rerender)renderPage();
+    const dialog=$('detail-dialog');
+    if(snapshot.detail){
+      const redraw=rerender||!dialog.open||JSON.stringify(detailView)!==JSON.stringify(snapshot.detail)||detailState(snapshot.app)!==detailState(previous?.app);
+      detailView=clone(snapshot.detail);
+      if(redraw){if(detailView.kind==='product')renderProductDetail(detailView.id);else renderCardDetail(detailView.id);}
+      window.ChromeExampleWall?.restoreWall(snapshot.wall);
+    }else{detailView=null;if(dialog.open)dialog.close();}
+    if(snapshot.zoom&&snapshot.detail)window.ChromeExampleWall?.restoreZoom(snapshot.zoom);
+    const s=snapshot.scroll||{};
+    window.scrollTo({left:s.x||0,top:s.y||0,behavior:'instant'});
+    dialog.scrollLeft=s.detailX||0;dialog.scrollTop=s.detailY||0;
+    const focus=findFocus(snapshot.focus);
+    if(focus?.isConnected!==false)focus?.focus({preventScroll:true});
+  }
+  function serializeUI(snapshot){
+    // Budget inputs are page-memory-only, as promised by the existing route UI.
+    if(snapshot.journey){snapshot.journey.budgetAmount='';snapshot.journey.budgetCurrency='CNY';snapshot.journey.budgetInvalid=false;}
+    return snapshot;
+  }
+  const uiHistory=window.CatalogHistory=window.CatalogModalHistory.create({history,location,capture:captureUI,restore:restoreUI,readRoute,serialize:serializeUI});
+  window.addEventListener('hashchange',uiHistory.transition);
+  window.addEventListener('popstate',uiHistory.transition);
+  // Capture before delegated mutations; keep late scroll/focus changes in the current
+  // entry's in-memory snapshot without spamming the browser history write quota.
+  document.addEventListener('click',()=>uiHistory.checkpoint(),true);
+  for(const type of ['input','change','click','focusin','scroll'])document.addEventListener(type,uiHistory.changed,type==='scroll');
+  document.addEventListener('click',e=>{
+    const anchor=e.target.closest?.('a[href]');
+    if(!anchor||!uiHistory.busy||e.defaultPrevented||e.button>0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||anchor.download||anchor.target&&anchor.target!=='_self')return;
+    const href=anchor.href;e.preventDefault();uiHistory.defer(()=>location.assign(href));
+  },true);
+  window.addEventListener('pagehide',uiHistory.leave);
   readRoute();
   window.CATALOG_READY = true;
   if (window.dispatchEvent) window.dispatchEvent(new Event('catalog-ready'));
+  uiHistory.start();
+
 })();

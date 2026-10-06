@@ -29,7 +29,8 @@
       state.query.styles.forEach(s => p.append('style',s));
       if (state.brand) p.set('brand',state.brand);
       const hash = '#journeys?' + p.toString();state.lastHash=hash;
-      if (push && history.pushState) history.pushState(null,'',hash); else history.replaceState(null,'',hash);
+      if (window.CatalogHistory) window.CatalogHistory.replaceRoute(hash,push);
+      else if (push && history.pushState) history.pushState(null,'',hash); else history.replaceState(null,'',hash);
     }
     function output() {
       const q = {...state.query,styles:[...state.query.styles]};
